@@ -12,15 +12,15 @@ cd Swamp-Sequencers
 
 ### 2. Obtain the data
 #### Download the data
-The project uses a large dataset which doesn't fit in a GitHub repo, but can be obtained at [https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.40/] by clicking "Download", selecting "Genome Sequences (FASTA)", and clicking Download.
+The project uses a large dataset which doesn't fit in a GitHub repo, but can be obtained [here](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.40/) by clicking "Download", selecting "Genome Sequences (FASTA)", and clicking Download again.
 #### Moving the data
 After downloading the data, create a data directory in the Swamp-Sequencers project directory.
 ```Bash
 # Swamp-Sequencers/
 mkdir data
 ```
-Then, place the downloaded zip file (""ncbi_dataset.zip" unless you've changed it) into the data directory and unzip the file.
-### 2. Build the project
+Then, place the downloaded zip file ("ncbi_dataset.zip" unless you've changed it) into the data directory and unzip the file.
+### 3. Build the project
 The project uses an out-of-source build.
 ```Bash
 mkdir build
