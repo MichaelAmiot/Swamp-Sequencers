@@ -9,13 +9,24 @@ This project benchmarks the performance, memory efficiency, and build constraint
 git clone https://github.com/MichaelAmiot/Swamp-Sequencers
 cd Swamp-Sequencers
 ```
+
+### 2. Obtain the data
+#### Download the data
+The project uses a large dataset which doesn't fit in a GitHub repo, but can be obtained at [https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000001405.40/] by clicking "Download", selecting "Genome Sequences (FASTA)", and clicking Download.
+#### Moving the data
+After downloading the data, create a data directory in the Swamp-Sequencers project directory.
+```Bash
+# Swamp-Sequencers/
+mkdir data
+```
+Then, place the downloaded zip file (""ncbi_dataset.zip" unless you've changed it) into the data directory and unzip the file.
 ### 2. Build the project
 The project uses an out-of-source build.
 ```Bash
 mkdir build
 cd build
 cmake ..
-make 
+make
 ```
 ### Usage
 Run the CLI interface to query the dataset
