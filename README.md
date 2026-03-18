@@ -23,18 +23,22 @@ Then, place the downloaded zip file ("ncbi_dataset.zip" unless you've changed it
 ### 3. Build the project
 The project uses an out-of-source build.
 ```Bash
+# Swamp-Sequencers/
 mkdir build
 cd build
+# Swamp-Sequencers/build
 cmake ..
 make
 ```
 ### Usage
 Run the CLI interface to query the dataset
 ```Bash
+# Swamp-Sequencers/build
 ./bin/SwampSequencer
 ```
 Or run the automated Google Test suite
 ```Bash
+# Swamp-Sequencers/build
 ./bin/SwampTests
 ```
 ## Attribution
