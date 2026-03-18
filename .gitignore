@@ -1,0 +1,7 @@
+build/
+bin/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+data/
+.idea/
