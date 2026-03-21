@@ -3,6 +3,7 @@ add_library(SwampSeqLib STATIC "")
 target_sources(SwampSeqLib PRIVATE
   suffix_array.cpp
   suffix_tree.cpp
+  genome_mapper.cpp
 )
 
 target_include_directories(SwampSeqLib PUBLIC ${CMAKE_SOURCE_DIR}/include)
