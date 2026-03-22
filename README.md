@@ -31,10 +31,10 @@ cmake ..
 make
 ```
 ### Usage
-Run the CLI interface to query the dataset
+Run the CLI interface to query the dataset by providing the path to the genome data.
 ```Bash
 # Swamp-Sequencers/build
-./bin/SwampSequencer.exe ../Data/ncbi_dataset/ncbi_dataset/data/GCF_000001405.40/GCF_000001405.40/GCF_000001405.40_GRCh38.p14_genomic.fna.
+./bin/SwampSequencer.exe ../Data/ncbi_dataset/ncbi_dataset/data/GCF_000001405.40GCF_000001405.40_GRCh38.p14_genomic.fna
 ```
 Or run the automated Google Test suite
 ```Bash
