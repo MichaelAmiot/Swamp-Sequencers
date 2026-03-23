@@ -70,7 +70,7 @@ private:
     // ── data members ────────────────────────────────────────────────────────
 
     const char*_data  = nullptr; // Pointer into mapped genome memory.
-    size_t_n = 0; // Number of characters (genome length).
+    size_t_num = 0; // Number of characters (genome length).
     std::vector<size_t> _sa; // Suffix array: _sa[i] = start of i-th suffix.
     bool _ready = false;
 };
