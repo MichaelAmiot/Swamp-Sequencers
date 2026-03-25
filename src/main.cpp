@@ -1,6 +1,7 @@
 #include "SwampSeqLib/genome_mapper.h"
 #include "SwampSeqLib/suffix_array.h"
 #include <iostream>
+#include <string_view>
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -16,11 +17,13 @@ int main(int argc, char *argv[]) {
   char *mappedData = data.data();
   std::cout << "File size: " << data.size() << "\n" << std::flush;
   std::cout << "Building suffix array.\n";
-  SuffixArray SA(data);
+
+  mappedData[1000000] = '\0';
+
+  SuffixArray SA(mappedData);
   std::cout << "Suffix array built, searching...\n";
-  auto res =
-      SA.search("CATGATTAGGAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
-  std::cout << "pattern found at:\n";
+  auto res = SA.search("ACT");
+  std::cout << res.size() << " Patterns found at:\n";
   for (auto pair : res) {
     std::cout << "Offset: " << pair.offset << "\n";
   }
