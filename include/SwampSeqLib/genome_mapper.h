@@ -8,9 +8,9 @@
 #include <windows.h>
 #else
 #define OS_POSIX
-#include <fcntl.h> open()
-#include <sys/mmap.h> mmap(), mumap()
-#include <sys/stat.h> fstat()
+#include <fcntl.h>    // open()
+#include <sys/mman.h> // mmap(), munmap()
+#include <sys/stat.h> // fstat()
 #include <unistd.h>
 #endif
 
@@ -32,7 +32,7 @@ public:
 
   // Remove copying
   GenomeMapper(const GenomeMapper &) = delete;
-  GenomeMapper operator=(const GenomeMapper &) = delete;
+  GenomeMapper &operator=(const GenomeMapper &) = delete;
 
   // Accessors
   const char *data() const;
