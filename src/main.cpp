@@ -15,9 +15,12 @@ int main(int argc, char *argv[]) {
   }
   char *mappedData = data.data();
   std::cout << "File size: " << data.size() << "\n" << std::flush;
+  std::cout << "Building suffix array.\n";
   SuffixArray SA(data);
-  auto res = SA.search("CATGATTAGGAG");
-  std::cout << "CATGATTAGGAG found at:\n";
+  std::cout << "Suffix array built, searching...\n";
+  auto res =
+      SA.search("CATGATTAGGAGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG");
+  std::cout << "pattern found at:\n";
   for (auto pair : res) {
     std::cout << "Offset: " << pair.offset << "\n";
   }
