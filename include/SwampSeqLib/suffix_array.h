@@ -26,6 +26,7 @@ public:
     throws std::runtime_error if mapper.isValid() == false.
    */
   explicit SuffixArray(const GenomeMapper &mapper);
+  SuffixArray(const std::string &text);
 
   /*
     Find all occurrences of @p pattern in the genome.

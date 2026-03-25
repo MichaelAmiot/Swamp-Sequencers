@@ -19,6 +19,14 @@ SuffixArray::SuffixArray(const GenomeMapper &mapper) {
   _ready = true;
 }
 
+SuffixArray::SuffixArray(const std::string &text) {
+  _data = text.c_str();
+  _num = text.size();
+
+  buildSuffixArray();
+  _ready = true;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Suffix Array Construction  —  O(n log² n) prefix-doubling (Manber & Myers)
 // Simple, cache-friendly, no external dependencies.
