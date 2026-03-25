@@ -2,16 +2,11 @@
 #include <string>
 #include <vector>
 
-struct STBuild{
+struct STBuild {};
 
-};
-
-
-class suffix_tree{
-
+class suffix_tree {
 
 public:
-    suffix_tree();
-    ~suffix_tree();
-
-}
+  suffix_tree();
+  ~suffix_tree();
+};
