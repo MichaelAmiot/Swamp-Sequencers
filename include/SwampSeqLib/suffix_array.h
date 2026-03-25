@@ -57,13 +57,13 @@ private:
 
     /*
       Binary-search the SA for the leftmost suffix that begins with
-      @p pattern.
+      pattern.
      */
     size_t lowerBound(const std::string& pattern) const;
 
     /*
       Binary-search the SA for one-past the rightmost suffix that
-       begins with @p pattern.
+       begins with pattern.
      */
     size_t upperBound(const std::string& pattern) const;
 
