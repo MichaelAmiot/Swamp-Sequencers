@@ -3,6 +3,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string_view>
+#include <cstdint>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Construction
@@ -48,7 +49,8 @@ void SuffixArray::buildSuffixArray() {
   std::iota(_sa.begin(), _sa.end(), size_t{0});
 
   // ranks[i] = current sort rank of suffix starting at i.
-  std::vector<int> ranks(_num), nextRanks(_num);
+ // using int_64 instead of long long, guaranteed 64-bit, and the most explicit/readable choice
+  std::vector<int64_t> ranks(_num), nextRanks(_num);
 
   // Seed ranks from the first character.
   for (size_t i = 0; i < _num; ++i) {
@@ -77,7 +79,7 @@ void SuffixArray::buildSuffixArray() {
     ranks = nextRanks;
 
     // Early exit: all ranks are unique → array is fully sorted.
-    if (ranks[_sa[_num - 1]] == static_cast<int>(_num) - 1) {
+    if (ranks[_sa[_num - 1]] == static_cast<int64_t>(_num) - 1) {
       break;
     }
   }
