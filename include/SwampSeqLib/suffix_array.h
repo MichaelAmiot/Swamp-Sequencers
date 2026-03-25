@@ -4,13 +4,12 @@
 #include <string>
 #include <vector>
 
-
 /*
   Result of a single pattern search.
  */
 struct SearchResult {
-    size_t offset;   // Byte offset into the genome where the match starts.
-    size_t length;   // Length of the matched pattern (== query length).
+  size_t offset; // Byte offset into the genome where the match starts.
+  size_t length; // Length of the matched pattern (== query length).
 };
 
 /*
@@ -19,58 +18,54 @@ struct SearchResult {
   Construction is O(n log n) time and O(n) extra space (the suffix array
   itself — the genome is never copied).  Queries are O(m log n).
  */
-class SuffixArray{
+class SuffixArray {
 public:
-    /*
-      Construct from an already-opened GenomeMapper.
+  /*
+    Construct from an already-opened GenomeMapper.
 
-      throws std::runtime_error if mapper.isValid() == false.
-     */
-    explicit SuffixArray(const GenomeMapper& mapper);
+    throws std::runtime_error if mapper.isValid() == false.
+   */
+  explicit SuffixArray(const GenomeMapper &mapper);
 
-    /*
-      Find all occurrences of @p pattern in the genome.
+  /*
+    Find all occurrences of @p pattern in the genome.
 
-     */
-    std::vector<SearchResult>
-    search(const std::string& pattern) const;
+   */
+  std::vector<SearchResult> search(const std::string &pattern) const;
 
-    /*
-     Return the number of suffixes (== genome size).
-     */
-    size_t size() const noexcept {
-        return _n;
-    }
+  /*
+   Return the number of suffixes (== genome size).
+   */
+  size_t size() const noexcept { return _n; }
 
-    /*
-     True when the suffix array was built successfully.
-     */
-    bool isReady() const noexcept {
-        return _ready;
-    }
+  /*
+   True when the suffix array was built successfully.
+   */
+  bool isReady() const noexcept { return _ready; }
 
 private:
-    // ──  helpers ────────────────────────────────────────────────────
+  // ──  helpers ────────────────────────────────────────────────────
 
-    // Build the suffix array using prefix-doubling (Manber & Myers).
-    void buildSuffixArray();
+  // Build the suffix array using prefix-doubling (Manber & Myers).
+  void buildSuffixArray();
 
-    /*
-      Binary-search the SA for the leftmost suffix that begins with
-      pattern.
-     */
-    size_t lowerBound(const std::string& pattern) const;
+  /*
+    Binary-search the SA for the leftmost suffix that begins with
+    pattern.
+   */
+  size_t lowerBound(const std::string &pattern) const;
 
-    /*
-      Binary-search the SA for one-past the rightmost suffix that
-       begins with pattern.
-     */
-    size_t upperBound(const std::string& pattern) const;
+  /*
+    Binary-search the SA for one-past the rightmost suffix that
+     begins with pattern.
+   */
+  size_t upperBound(const std::string &pattern) const;
 
-    // ── data members ────────────────────────────────────────────────────────
+  // ── data members ────────────────────────────────────────────────────────
 
-    const char*_data  = nullptr; // Pointer into mapped genome memory.
-    size_t_num = 0; // Number of characters (genome length).
-    std::vector<size_t> _sa; // Suffix array: _sa[i] = start of i-th suffix.
-    bool _ready = false;
+  const char *_data = nullptr; // Pointer into mapped genome memory.
+  size_t _num = 0;             // Number of characters (genome length).
+  std::vector<size_t> _sa;     // Suffix array: _sa[i] = start of i-th suffix.
+  bool _ready = false;
+  size_t _n = 0; // Count of found suffixes
 };
