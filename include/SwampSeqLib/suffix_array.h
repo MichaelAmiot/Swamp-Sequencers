@@ -44,6 +44,8 @@ public:
    */
   bool isReady() const noexcept { return _ready; }
 
+  std::vector<size_t> getArray() const noexcept { return _sa; }
+
 private:
   // ──  helpers ────────────────────────────────────────────────────
 
