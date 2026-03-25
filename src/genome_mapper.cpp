@@ -1,5 +1,7 @@
 #include "SwampSeqLib/genome_mapper.h"
+#include <cctype>
 #include <cstddef>
+#include <cstring>
 #ifdef OS_WINDOWS
 #include <fileapi.h>
 #include <handleapi.h>
@@ -10,61 +12,126 @@
 
 GenomeMapper::GenomeMapper(const std::string &filePath) {
 #ifdef OS_WINDOWS
-  // Open file
+  // Open the source file, then copy it into an anonymous writable mapping.
   _fileHandle = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ,
                             NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   if (_fileHandle == INVALID_HANDLE_VALUE)
     return;
 
-  // Get size
   LARGE_INTEGER size;
   if (!GetFileSizeEx(_fileHandle, &size))
     return;
-  _fileSize = size.QuadPart;
+  _mappingSize = static_cast<size_t>(size.QuadPart) + 1;
 
-  // Get map handle
-  _memoryHandle =
-      CreateFileMappingA(_fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
-  if (_memoryHandle == NULL)
+  HANDLE memoryHandle =
+      CreateFileMappingA(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
+                         static_cast<DWORD>(_mappingSize), NULL);
+  if (memoryHandle == NULL)
     return;
 
-  // Get mapped data
-  _mappedData = MapViewOfFile(_memoryHandle, FILE_MAP_READ, 0, 0, 0);
-  if (_mappedData != NULL)
-    _isValid = true;
+  _mappingBase =
+      MapViewOfFile(memoryHandle, FILE_MAP_WRITE, 0, 0, _mappingSize);
+  CloseHandle(memoryHandle);
+  if (_mappingBase == nullptr)
+    return;
+
+  auto *buffer = static_cast<char *>(_mappingBase);
+  size_t totalRead = 0;
+  while (totalRead < _mappingSize - 1) {
+    const size_t chunkSize =
+        std::min(_mappingSize - 1 - totalRead, kMaxCopyChunk);
+    DWORD bytesRead = 0;
+    if (!ReadFile(_fileHandle, buffer + totalRead,
+                  static_cast<DWORD>(chunkSize), &bytesRead, NULL)) {
+      UnmapViewOfFile(_mappingBase);
+      _mappingBase = nullptr;
+      return;
+    }
+    if (bytesRead == 0)
+      break;
+    totalRead += static_cast<size_t>(bytesRead);
+  }
+
+  buffer[totalRead] = '\0';
+  _mappedData = _mappingBase;
+  _fileSize = totalRead;
+  _isValid = true;
 
 #elif defined(OS_POSIX)
-  // Open file
+  // Create a writable copy-on-write view of the source file.
   _fileDescriptor = open(filePath.c_str(), O_RDONLY);
   if (_fileDescriptor == -1)
     return;
 
-  // Get size
   struct stat sb;
   if (fstat(_fileDescriptor, &sb) == -1)
     return;
-  _fileSize = sb.st_size;
+  if (sb.st_size <= 0)
+    return;
 
-  // Map data
-  _mappedData =
-      mmap(nullptr, _fileSize, PROT_READ, MAP_PRIVATE, _fileDescriptor, 0);
-  if (_mappedData != MAP_FAILED)
-    _isValid = true;
+  _mappingSize = static_cast<size_t>(sb.st_size);
+  _mappingBase = mmap(nullptr, _mappingSize, PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE, _fileDescriptor, 0);
+  if (_mappingBase == MAP_FAILED) {
+    _mappingBase = nullptr;
+    return;
+  }
+
+  _mappedData = _mappingBase;
+  _fileSize = _mappingSize;
+  _isValid = true;
 #endif
+  if (!_isValid)
+    return;
+
+  // If we have a header, skip it before compacting sequence bytes.
+  char *data = this->data();
+  char *dataEnd = static_cast<char *>(_mappingBase) + _fileSize;
+  if (data[0] == '>') {
+    char *firstNewLine = static_cast<char *>(
+        std::memchr(data, '\n', static_cast<size_t>(dataEnd - data)));
+    if (firstNewLine) {
+      // Bump char pointer to sequence start
+      data = firstNewLine + 1;
+    }
+  }
+
+  // Remove headers, newlines, and any non-sequence characters in place.
+  char *src = data;
+  char *dst = data;
+
+  while (src < dataEnd) {
+    if (*src == '>') {
+      char *nextNewLine = static_cast<char *>(
+          std::memchr(src, '\n', static_cast<size_t>(dataEnd - src)));
+      if (nextNewLine == nullptr)
+        break;
+      src = nextNewLine + 1;
+      continue;
+    }
+
+    // Collect valid sequence members
+    char upper = std::toupper(static_cast<unsigned char>(*src));
+    if (upper == 'A' || upper == 'C' || upper == 'T' || upper == 'G' ||
+        upper == 'N') {
+      *dst++ = upper;
+    }
+    ++src;
+  }
+  _mappedData = data;
+  _fileSize = static_cast<size_t>(dst - data);
 }
 
 GenomeMapper::~GenomeMapper() {
   // Handle clean-up based on OS
 #ifdef OS_WINDOWS
-  if (_mappedData)
-    UnmapViewOfFile(_mappedData);
-  if (_memoryHandle)
-    CloseHandle(_memoryHandle);
+  if (_mappingBase)
+    UnmapViewOfFile(_mappingBase);
   if (_fileHandle != INVALID_HANDLE_VALUE)
     CloseHandle(_fileHandle);
 #elif defined(OS_POSIX)
-  if (_isValid)
-    munmap(_mappedData, _fileSize);
+  if (_mappingBase)
+    munmap(_mappingBase, _mappingSize);
   if (_fileDescriptor != -1)
     close(_fileDescriptor);
 #endif
@@ -73,5 +140,6 @@ GenomeMapper::~GenomeMapper() {
 const char *GenomeMapper::data() const {
   return static_cast<const char *>(_mappedData);
 }
+char *GenomeMapper::data() { return static_cast<char *>(_mappedData); }
 size_t GenomeMapper::size() const { return _fileSize; }
 bool GenomeMapper::isValid() const { return _isValid; }

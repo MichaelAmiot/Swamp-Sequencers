@@ -17,11 +17,12 @@
 class GenomeMapper {
 #ifdef OS_WINDOWS
   HANDLE _fileHandle = INVALID_HANDLE_VALUE;
-  HANDLE _memoryHandle = NULL;
 #elif defined(OS_POSIX)
   int _fileDescriptor = -1;
 #endif
+  size_t _mappingSize = 0;
   size_t _fileSize = 0;
+  void *_mappingBase = nullptr;
   void *_mappedData = nullptr;
   bool _isValid = false;
 
@@ -36,6 +37,7 @@ public:
 
   // Accessors
   const char *data() const;
+  char *data();
   size_t size() const;
   bool isValid() const;
 };
