@@ -1,6 +1,9 @@
+#include "SwampSeqLib/genome_mapper.h"
 #include "SwampSeqLib/suffix_array.h"
 #include "SwampSeqLib/suffix_tree.h"
 #include <cstddef>
+#include <cstdio>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <random>
 
