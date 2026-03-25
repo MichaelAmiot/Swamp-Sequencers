@@ -1,10 +1,12 @@
 #include "SwampSeqLib/genome_mapper.h"
 #include <cstddef>
+#ifdef OS_WINDOWS
 #include <fileapi.h>
 #include <handleapi.h>
 #include <memoryapi.h>
-#include <string>
 #include <winnt.h>
+#endif
+#include <string>
 
 GenomeMapper::GenomeMapper(const std::string &filePath) {
 #ifdef OS_WINDOWS
