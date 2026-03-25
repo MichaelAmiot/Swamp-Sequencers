@@ -10,6 +10,9 @@
 struct SearchResult {
   size_t offset; // Byte offset into the genome where the match starts.
   size_t length; // Length of the matched pattern (== query length).
+  bool operator==(const SearchResult &other) const {
+    return (this->offset == other.offset && this->length == other.length);
+  }
 };
 
 /*
@@ -37,7 +40,7 @@ public:
   /*
    Return the number of suffixes (== genome size).
    */
-  size_t size() const noexcept { return _n; }
+  size_t size() const noexcept { return _num; }
 
   /*
    True when the suffix array was built successfully.
@@ -70,5 +73,4 @@ private:
   size_t _num = 0;             // Number of characters (genome length).
   std::vector<size_t> _sa;     // Suffix array: _sa[i] = start of i-th suffix.
   bool _ready = false;
-  size_t _n = 0; // Count of found suffixes
 };

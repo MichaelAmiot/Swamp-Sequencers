@@ -57,30 +57,27 @@ void SuffixArray::buildSuffixArray() {
 
   // Double the comparison window until the whole SA is sorted.
   for (size_t window = 1; window < _num; window <<= 1) {
-    auto compareByIndex = [&](size_t leftIndex, size_t rightIndex) {
-      if (ranks[leftIndex] != ranks[rightIndex]) {
-        return ranks[leftIndex] < ranks[rightIndex];
-      }
-
-      const int rankA =
-          (leftIndex + window < _num) ? ranks[leftIndex + window] : -1;
-      const int rankB =
-          (rightIndex + window < _num) ? ranks[rightIndex + window] : -1;
-      return rankA < rankB;
+    // Helper: get (rank[i], rank[i + window])
+    auto getPair = [&](size_t i) {
+      return std::pair{ranks[i], (i + window < _num) ? ranks[i + window] : -1};
     };
-    std::sort(_sa.begin(), _sa.end(), compareByIndex);
 
-    // Re-assign ranks based on the freshly sorted order.
+    // Sort suffix indices by rank pairs
+    std::sort(_sa.begin(), _sa.end(),
+              [&](size_t a, size_t b) { return getPair(a) < getPair(b); });
+
+    // Assign new ranks
     nextRanks[_sa[0]] = 0;
+
     for (size_t i = 1; i < _num; ++i) {
-      nextRanks[_sa[i]] =
-          nextRanks[_sa[i - 1]] + (compareByIndex(_sa[i - 1], _sa[i]) ? 1 : 0);
+      nextRanks[_sa[i]] = nextRanks[_sa[i - 1]] +
+                          (getPair(_sa[i - 1]) != getPair(_sa[i]) ? 1 : 0);
     }
 
     ranks = nextRanks;
 
     // Early exit: all ranks are unique → array is fully sorted.
-    if (ranks[_sa[_n - 1]] == static_cast<int>(_num) - 1) {
+    if (ranks[_sa[_num - 1]] == static_cast<int>(_num) - 1) {
       break;
     }
   }
