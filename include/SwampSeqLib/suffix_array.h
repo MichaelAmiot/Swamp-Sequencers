@@ -51,26 +51,32 @@ public:
   // Return all positions at which pattern occurs in the text, sorted by
   // ascending offset.  Returns an empty vector if the pattern is absent or
   // the array has not been built yet.
-  [[nodiscard]] std::vector<SearchResult>
+  std::vector<SearchResult>
   search(const std::string &pattern) const;
 
   // Number of characters in the indexed text.
-  [[nodiscard]] size_t size() const noexcept { return _num; }
+  size_t size() const noexcept {
+    return _num;
+  }
 
   // True once the suffix array has been successfully built.
-  [[nodiscard]] bool ready() const noexcept { return _ready; }
+  bool ready() const noexcept {
+    return _ready;
+  }
 
   // Direct read-only access to the underlying suffix array.
-  [[nodiscard]] const std::vector<size_t> &sa() const noexcept { return _sa; }
+  const std::vector<size_t> &sa() const noexcept {
+    return _sa;
+  }
 
 private:
   // ── Internal data ─────────────────────────────────────────────────────────
 
-  const char *_data = nullptr; //< Pointer to the text (not owned when
+  const char *_data = nullptr; // Pointer to the text (not owned when
                                //constructed from GenomeMapper).
-  std::string _owned;          //< Storage when constructed from string.
-  size_t _num = 0;             //< Text length.
-  std::vector<size_t> _sa;     //< The suffix array.
+  std::string _owned;          // Storage when constructed from string.
+  size_t _num = 0;             // Text length.
+  std::vector<size_t> _sa;     // The suffix array.
   bool _ready = false;
 
   // ── SA-IS implementation ──────────────────────────────────────────────────
@@ -87,6 +93,6 @@ private:
 
   // ── Binary-search helpers for pattern search ──────────────────────────────
 
-  [[nodiscard]] size_t lowerBound(const std::string &pattern) const;
-  [[nodiscard]] size_t upperBound(const std::string &pattern) const;
+  size_t lowerBound(const std::string &pattern) const;
+  size_t upperBound(const std::string &pattern) const;
 };

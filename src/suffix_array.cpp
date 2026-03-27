@@ -4,7 +4,6 @@
 #include <numeric>
 #include <stdexcept>
 #include <iostream>
-#include <string_view>
 
 // SearchResult comparison for testing
 bool SearchResult::operator==(const SearchResult &other) const {
@@ -43,12 +42,12 @@ SuffixArray::SuffixArray(const std::string &text) {
 //
 // High-level outline
 // ──────────────────
-//  1. Classify every position as S-type or L-type.
-//  2. Locate Left-Most-S (LMS) substrings.
-//  3. Induced-sort the LMS suffixes into bucket heads/tails to get an
+//   Classify every position as S-type or L-type.
+//   Locate Left-Most-S (LMS) substrings.
+//   Induced-sort the LMS suffixes into bucket heads/tails to get an
 //     approximate SA.
-//  4. Compact the sorted LMS substrings into a reduced string s1 and recurse.
-//  5. Use the exact LMS order from the recursion to re-run induced sort on
+//   Compact the sorted LMS substrings into a reduced string s1 and recurse.
+//   Use the exact LMS order from the recursion to re-run induced sort on
 //     the original string, yielding the final SA.
 //
 // Alphabet convention
@@ -75,8 +74,7 @@ std::vector<size_t> getBuckets(const std::vector<int64_t> &symbols,
 }
 
 // Fill `heads` with the start index of each bucket (for L-type induced sort).
-void getBucketHeads(const std::vector<size_t> &buckets,
-                    std::vector<size_t> &heads) {
+void getBucketHeads(const std::vector<size_t> &buckets, std::vector<size_t> &heads) {
   size_t offset = 0;
   for (size_t i = 0; i < buckets.size(); ++i) {
     heads[i] = offset;
@@ -85,8 +83,7 @@ void getBucketHeads(const std::vector<size_t> &buckets,
 }
 
 // Fill `tails` with the last index (inclusive) of each bucket (for S-type).
-void getBucketTails(const std::vector<size_t> &buckets,
-                    std::vector<size_t> &tails) {
+void getBucketTails(const std::vector<size_t> &buckets, std::vector<size_t> &tails) {
   size_t offset = 0;
   for (size_t i = 0; i < buckets.size(); ++i) {
     offset += buckets[i];
@@ -97,8 +94,7 @@ void getBucketTails(const std::vector<size_t> &buckets,
 // ── Induced sorting pass ───────────────────────────────────────────────────
 
 // Forward pass: place all L-type suffixes using already-placed entries in sa.
-void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa,
-                 const std::vector<bool> &isS,
+void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &isS,
                  const std::vector<size_t> &buckets, int64_t alphabetSize) {
   const size_t textSize = s.size();
   std::vector<size_t> heads(static_cast<size_t>(alphabetSize));
@@ -126,8 +122,7 @@ void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa,
 }
 
 // Backward pass: place all S-type suffixes.
-void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa,
-                 const std::vector<bool> &isS,
+void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &isS,
                  const std::vector<size_t> &buckets, int64_t alphabetSize) {
   const size_t n = s.size();
   std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
@@ -170,8 +165,7 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
 
   const std::vector<size_t> buckets = getBuckets(s, alphabetSize);
 
-  auto placeLMSIntoBuckets =
-      [&](const std::vector<size_t> &orderedLMSPositions) {
+  auto placeLMSIntoBuckets = [&](const std::vector<size_t> &orderedLMSPositions) {
         sa.assign(n, kEmptySlot);
 
         std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
@@ -219,7 +213,7 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
     const size_t current = sortedLMSPositions[i];
 
     bool differ = false;
-    for (size_t d = 0;; ++d) {
+    for (size_t d = 0;; ++d) { // loop length unknown
       const size_t prevIndex = previous + d;
       const size_t currIndex = current + d;
 
