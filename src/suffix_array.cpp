@@ -48,7 +48,7 @@ SuffixArray::SuffixArray(const std::string &text) {
 //     approximate SA.
 //   Compact the sorted LMS substrings into a reduced string s1 and recurse.
 //   Use the exact LMS order from the recursion to re-run induced sort on
-//     the original string, yielding the final SA.
+//     the original string, yielding the final Suffix Array.
 //
 // Alphabet convention
 // ───────────────────
@@ -61,8 +61,7 @@ SuffixArray::SuffixArray(const std::string &text) {
 // ── Helpers (file-scope) ─────────────────────────────────
 
 // Return bucket sizes: buckets[c] = number of occurrences of symbol c.
-std::vector<size_t> getBuckets(const std::vector<int64_t> &symbols,
-                               int64_t alphabetSize) {
+std::vector<size_t> getBuckets(const std::vector<int64_t> &symbols, int64_t alphabetSize) {
   const size_t bucketCount = static_cast<size_t>(alphabetSize);
   std::vector<size_t> buckets(bucketCount, 0);
 
@@ -94,7 +93,7 @@ void getBucketTails(const std::vector<size_t> &buckets, std::vector<size_t> &tai
 // ── Induced sorting pass ───────────────────────────────────────────────────
 
 // Forward pass: place all L-type suffixes using already-placed entries in sa.
-void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &isS,
+void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
                  const std::vector<size_t> &buckets, int64_t alphabetSize) {
   const size_t textSize = s.size();
   std::vector<size_t> heads(static_cast<size_t>(alphabetSize));
@@ -112,7 +111,7 @@ void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
     }
 
     const size_t predecessor = suffixIndex - 1;
-    if (isS[predecessor]) {
+    if (is_S[predecessor]) {
       continue;
     }
 
@@ -122,7 +121,7 @@ void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
 }
 
 // Backward pass: place all S-type suffixes.
-void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &isS,
+void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
                  const std::vector<size_t> &buckets, int64_t alphabetSize) {
   const size_t n = s.size();
   std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
@@ -135,7 +134,7 @@ void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
     }
 
     const size_t pred = suffix - 1;
-    if (!isS[pred]) {
+    if (!is_S[pred]) {
       continue;
     }
 
@@ -145,12 +144,11 @@ void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SuffixArray::sa_is  —  recursive core
+// SuffixArray::sa_is  —  recursive 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
-                        int64_t alphabetSize) {
-  constexpr size_t kEmptySlot = SIZE_MAX;
+void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa, int64_t alphabetSize) {
+  const size_t kEmptySlot = SIZE_MAX;
   const size_t n = s.size();
 
   std::vector<bool> isSType(n, false);
