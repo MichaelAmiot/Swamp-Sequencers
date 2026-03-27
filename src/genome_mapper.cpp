@@ -10,7 +10,8 @@
 #endif
 #include <string>
 
-GenomeMapper::GenomeMapper(const std::string &filePath) {
+// Generator
+void GenomeMapper::fromFile(const std::string &filePath) {
 #ifdef OS_WINDOWS
   // Open the source file, then copy it into an anonymous writable mapping.
   _fileHandle = CreateFileA(filePath.c_str(), GENERIC_READ, FILE_SHARE_READ,
@@ -122,6 +123,9 @@ GenomeMapper::GenomeMapper(const std::string &filePath) {
   _mappedData = data;
   _fileSize = static_cast<size_t>(dst - data);
 }
+
+GenomeMapper::GenomeMapper(const std::string &filePath) { fromFile(filePath); }
+GenomeMapper::GenomeMapper() {};
 
 GenomeMapper::~GenomeMapper() {
   // Handle clean-up based on OS

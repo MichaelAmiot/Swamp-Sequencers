@@ -31,6 +31,7 @@ class GenomeMapper {
 public:
   // Constructor/Destructor
   GenomeMapper(const std::string &filepath);
+  GenomeMapper();
   ~GenomeMapper();
 
   // Remove copying
@@ -42,4 +43,6 @@ public:
   char *data();
   size_t size() const;
   bool isValid() const;
+  // Generator
+  void fromFile(const std::string &filePath);
 };
