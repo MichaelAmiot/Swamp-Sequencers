@@ -4,7 +4,9 @@
 // Define memory mapper based on OS
 #if defined(_WIN32) || defined(_WIN64)
 #define OS_WINDOWS
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #else
 #define OS_POSIX
