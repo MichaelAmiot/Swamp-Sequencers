@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <numeric>
 #include <stdexcept>
+#include <iostream>
 #include <string_view>
 
 // SearchResult comparison for testing
@@ -176,7 +177,7 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
         std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
         getBucketTails(buckets, tails);
 
-        for (size_t i = orderedLMSPositions.size(); i-- > 0;) {
+        for (size_t i = orderedLMSPositions.size() - 1; i > 0; --i) {
           const size_t pos = orderedLMSPositions[i];
           sa[tails[static_cast<size_t>(s[pos])]--] = pos;
         }
@@ -198,7 +199,7 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
 
   std::vector<size_t> sortedLMSPositions;
   sortedLMSPositions.reserve(n / 2 + 1);
-  for (size_t i = 1; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     if (isLMSPosition(sa[i])) {
       sortedLMSPositions.push_back(sa[i]);
     }
