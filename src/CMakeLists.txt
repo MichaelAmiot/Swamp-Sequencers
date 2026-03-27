@@ -1,3 +1,9 @@
+cmake_minimum_required(VERSION 3.20)
+project(SwampSequencers CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # Create core functionality library for testing
 add_library(SwampSeqLib STATIC "")
 target_sources(SwampSeqLib PRIVATE

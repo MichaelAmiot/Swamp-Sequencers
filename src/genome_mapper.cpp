@@ -38,6 +38,7 @@ GenomeMapper::GenomeMapper(const std::string &filePath) {
   auto *buffer = static_cast<char *>(_mappingBase);
   size_t totalRead = 0;
   while (totalRead < _mappingSize - 1) {
+    unsigned long long kMaxCopyChunk;
     const size_t chunkSize =
         std::min(_mappingSize - 1 - totalRead, kMaxCopyChunk);
     DWORD bytesRead = 0;

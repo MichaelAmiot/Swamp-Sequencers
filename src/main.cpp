@@ -1,5 +1,5 @@
 #include "SwampSeqLib/genome_mapper.h"
-#include "SwampSeqLib/suffix_array.h"
+#include "../include/SwampSeqLib/suffix_array.h"
 #include <iostream>
 #include <string_view>
 
