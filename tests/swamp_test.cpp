@@ -1,5 +1,5 @@
-#include "SwampSeqLib/genome_mapper.h"
 #include "../include/SwampSeqLib/suffix_array.h"
+#include "SwampSeqLib/genome_mapper.h"
 #include "SwampSeqLib/suffix_tree.h"
 #include <cstddef>
 #include <cstdio>
@@ -16,7 +16,7 @@ TEST(SuffixArray, BasicString) {
   SuffixArray SA(text);
 
   std::vector<size_t> expected{5, 3, 1, 0, 4, 2};
-  EXPECT_EQ(SA.getArray(), expected);
+  EXPECT_EQ(SA.sa(), expected);
 }
 
 TEST(SuffixArray, GenomeString) {
