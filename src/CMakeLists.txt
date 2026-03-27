@@ -21,6 +21,11 @@ target_sources(SwampSequencer PRIVATE main.cpp)
 
 # Link the main executable to the library
 target_link_libraries(SwampSequencer PRIVATE SwampSeqLib)
+target_link_libraries(SwampSequencer PRIVATE 
+  ftxui::screen
+  ftxui::dom
+  ftxui::component
+)
 
 
 

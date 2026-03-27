@@ -15,9 +15,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
-# Add src subdirectory
-add_subdirectory(src)
-
 # Enable CTest
 enable_testing()
 
@@ -28,6 +25,14 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG        v1.17.0
 )
+FetchContent_Declare(ftxui
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
+  GIT_TAG v6.1.9
+)
+FetchContent_MakeAvailable(ftxui)
+
+# Add src subdirectory
+add_subdirectory(src)
 
 # Option for Windows compatibility
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
