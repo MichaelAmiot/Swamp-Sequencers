@@ -1,129 +1,154 @@
 #include "SwampSeqLib/genome_mapper.h"
 #include "SwampSeqLib/suffix_array.h"
+#include <algorithm>
 #include <chrono>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/dom/elements.hpp>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <thread>
+#include <vector>
 
 using namespace ftxui;
 
 int main() {
   // Shared Application State
-  std::string search_pattern = "ATGC";
-  std::string file_path = "../data/ecoli/ecoli.fna";
+  std::string searchPattern = "ATGC";
+  std::string filePath = "data/ecoli/ecoli.fna";
+  int algoChoice = 0;
+  std::vector<std::string> algoEntries = {"Suffix Array", "Suffix Tree",
+                                          "Compare Both"};
 
-  int algo_choice = 0;
-  std::vector<std::string> algo_entries = {"Suffix Array", "Suffix Tree",
-                                           "Compare Both"};
-
-  std::string status_text = "Idle. Ready to benchmark.";
-  std::string result_text = "";
-  bool is_running = false;
+  std::string statusText = "Idle. Ready to benchmark.";
+  std::string resultText = "";
+  std::vector<std::string> previewLines;
+  int selectedResult = 0;
+  bool isRunning = false;
 
   auto screen = ScreenInteractive::TerminalOutput();
 
   // Interactive Components
-  Component input_filepath = Input(&file_path, "e.g., ./data/genome.fna");
-  Component input_pattern = Input(&search_pattern, "e.g., ATGC");
-  Component algo_radiobox = Radiobox(&algo_entries, &algo_choice);
+  Component inputFilepath = Input(&filePath, "e.g., ./data/genome.fna");
+  Component inputPattern = Input(&searchPattern, "e.g., ATGC");
+  Component algoRadiobox = Radiobox(&algoEntries, &algoChoice);
 
-  // Benchmarking
-  Component run_button = Button("Run Benchmark", [&] {
-    if (is_running)
+  // Menu component for high-performance scrolling
+  Component resultList = Menu(&previewLines, &selectedResult);
+
+  // Benchmarking Logic
+  Component runButton = Button("Run Benchmark", [&] {
+    if (isRunning)
       return;
 
-    GenomeMapper map;
+    isRunning = true;
+    statusText = "Mapping " + filePath + "...";
+    resultText = "";
+    previewLines.clear();
 
-    is_running = true;
-    status_text = "Mapping " + file_path + "...";
-    result_text = "";
-
-    std::thread([&, file_path, search_pattern] {
+    std::thread([&, filePath, searchPattern] {
+      GenomeMapper map;
       try {
-        map.fromFile(file_path);
+        map.fromFile(filePath);
         if (!map.isValid()) {
           screen.Post([&] {
-            status_text = "Could not open file.";
-            is_running = false;
+            statusText = "Could not open file.";
+            isRunning = false;
           });
+          screen.Post(Event::Custom);
           return;
         }
       } catch (const std::exception &e) {
-        std::string errorMessage = e.what();
-        screen.Post([&] {
-          status_text = "Could not open file: " + errorMessage;
-          is_running = false;
+        std::string errMsg = e.what();
+        screen.Post([&, errMsg] {
+          statusText = "Error: " + errMsg;
+          isRunning = false;
         });
-        is_running = false;
+        screen.Post(Event::Custom);
         return;
       }
-      std::chrono::duration<double> saTime;
-      std::vector<SearchResult> saRes;
-      std::chrono::duration<double> stTime;
-      std::vector<SearchResult> stRes;
-      try {
-        if (algo_choice == 0 || algo_choice == 2) {
-          auto start = std::chrono::steady_clock::now();
-          screen.Post([&] { status_text = "Building suffix array..."; });
-          SuffixArray sa(map);
-          saRes = sa.search(search_pattern);
-          auto end = std::chrono::steady_clock::now();
-          saTime = end - start;
-        }
-      } catch (std::exception &e) {
-        screen.Post([&] {
-          std::string errorMessage = e.what();
-          status_text = "Error building Suffix Array: " + errorMessage;
-        });
-        is_running = false;
-        return;
-      }
-      int matchCount = saRes.size();
 
-      screen.Post([&, matchCount, saTime] {
-        status_text = "Benchmark Complete!";
-        if (algo_choice == 0) {
-          result_text =
-              "Suffix Array: " + std::to_string(saTime.count() * 1000) +
-              "ms | " + std::to_string(matchCount) + " matches found.";
-        } else if (algo_choice == 1) {
-          result_text = "Suffix Tree: 38ms | 1,204 matches found";
-        } else {
-          result_text = "Array: 45ms | Tree: 38ms (Tree was 7ms faster)";
-        }
-        is_running = false;
+      // Suffix Array Search
+      SuffixArray sa(map);
+      auto start = std::chrono::steady_clock::now();
+      auto saRes = sa.search(searchPattern);
+      auto end = std::chrono::steady_clock::now();
+
+      int matchCount = static_cast<int>(saRes.size());
+      double timeMs =
+          std::chrono::duration<double>(end - start).count() * 1000.0;
+
+      // Build previews on background thread
+      std::vector<std::string> localStrings;
+      const char *data = map.data();
+      int previewLimit = std::min<int>(matchCount, 2000);
+      int contextLen = 25;
+
+      for (int i = 0; i < previewLimit; i++) {
+        size_t idx = saRes[i].offset;
+        size_t startIdx = (idx > contextLen) ? (idx - contextLen) : 0;
+        size_t endIdx = std::min<size_t>(
+            map.size(), idx + searchPattern.size() + contextLen);
+
+        std::string snippet(data + startIdx, endIdx - startIdx);
+        localStrings.push_back("Offset(" + std::to_string(idx) + "): ..." +
+                               snippet + "...");
+      }
+
+      // Format the time to 1 decimal place
+      std::stringstream ss;
+      ss << std::fixed << std::setprecision(1) << timeMs;
+      std::string formattedTime = ss.str();
+
+      // Update UI state
+      screen.Post([&, matchCount, formattedTime, localStrings] {
+        previewLines = std::move(localStrings);
+        statusText = "Benchmark Complete!";
+        resultText = "Suffix Array: " + formattedTime + "ms | " +
+                     std::to_string(matchCount) + " matches found.";
+        isRunning = false;
       });
+
+      // Trigger redraw immediately
+      screen.Post(Event::Custom);
     }).detach();
   });
 
-  // Container
-  auto layout = Container::Vertical(
-      {input_filepath, input_pattern, algo_radiobox, run_button});
+  // Layout & Navigation Container
+  auto layout = Container::Vertical({
+      inputFilepath,
+      inputPattern,
+      algoRadiobox,
+      runButton,
+      resultList,
+  });
 
   // Renderer
   auto renderer = Renderer(layout, [&] {
-    return vbox({text("Swamp Sequencer") | bold | color(Color::Green),
+    return vbox({text("SWAMP SEQUENCER") | bold | color(Color::Green) | center,
                  separator(),
 
-                 // Render both inputs with clean, aligned labels
-                 hbox({text("Genome File Path : "), input_filepath->Render()}),
-                 hbox({text("Search Pattern   : "), input_pattern->Render()}),
+                 hbox({text("Genome File Path : "), inputFilepath->Render()}),
+                 hbox({text("Search Pattern   : "), inputPattern->Render()}),
                  separator(),
 
-                 text("Select Data Structure:"), algo_radiobox->Render(),
+                 text("Select Data Structure:"), algoRadiobox->Render(),
                  separator(),
 
-                 run_button->Render() | center, separator(),
+                 runButton->Render() | center, separator(),
 
-                 text(status_text) | color(Color::Yellow),
-                 text(result_text) | color(Color::Cyan) | bold
+                 text(statusText) | color(Color::Yellow),
+                 text(resultText) | color(Color::Cyan) | bold,
 
-           }) |
-           border;
+                 // Results window
+                 vbox({text("Results (Arrows to scroll)") | dim, separator(),
+                       resultList->Render() | vscroll_indicator | frame |
+                           size(HEIGHT, LESS_THAN, 15)}) |
+                     border | flex}) |
+           borderHeavy;
   });
 
   screen.Loop(renderer);
-
   return 0;
 }
