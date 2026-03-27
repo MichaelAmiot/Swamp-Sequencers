@@ -9,11 +9,9 @@
 using namespace ftxui;
 
 int main() {
-  // 1. Shared Application State (Now with TWO strings)
+  // Shared Application State
   std::string search_pattern = "ATGC";
-  std::string file_path =
-      "data/ncbi_dataset/ncbi_dataset/data/GCF_000001405.40/"
-      "GCF_000001405.40_GRCh38.p14_genomic.fna";
+  std::string file_path = "../data/ecoli/ecoli.fna";
 
   int algo_choice = 0;
   std::vector<std::string> algo_entries = {"Suffix Array", "Suffix Tree",
@@ -25,16 +23,17 @@ int main() {
 
   auto screen = ScreenInteractive::TerminalOutput();
 
-  // 2. Interactive Components
-  Component input_filepath = Input(&file_path, "e.g., ./data/genome.fasta");
+  // Interactive Components
+  Component input_filepath = Input(&file_path, "e.g., ./data/genome.fna");
   Component input_pattern = Input(&search_pattern, "e.g., ATGC");
   Component algo_radiobox = Radiobox(&algo_entries, &algo_choice);
 
-  // 3. The Benchmark Action
-  GenomeMapper map;
+  // Benchmarking
   Component run_button = Button("Run Benchmark", [&] {
     if (is_running)
       return;
+
+    GenomeMapper map;
 
     is_running = true;
     status_text = "Mapping " + file_path + "...";
@@ -48,7 +47,6 @@ int main() {
             status_text = "Could not open file.";
             is_running = false;
           });
-          map.data()[100000] = '\0';
           return;
         }
       } catch (const std::exception &e) {
@@ -81,13 +79,14 @@ int main() {
         is_running = false;
         return;
       }
+      int matchCount = saRes.size();
 
-      screen.Post([&] {
+      screen.Post([&, matchCount, saTime] {
         status_text = "Benchmark Complete!";
         if (algo_choice == 0) {
           result_text =
-              "Suffix Array: " + std::to_string(saTime.count() * 1000) + " | " +
-              std::to_string(saRes.size()) + " matches found.";
+              "Suffix Array: " + std::to_string(saTime.count() * 1000) +
+              "ms | " + std::to_string(matchCount) + " matches found.";
         } else if (algo_choice == 1) {
           result_text = "Suffix Tree: 38ms | 1,204 matches found";
         } else {
