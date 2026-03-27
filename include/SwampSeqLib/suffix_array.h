@@ -1,5 +1,5 @@
 #pragma once
-#include "SwampSeqLib/genome_mapper.h"  // GenomeMapper
+#include "SwampSeqLib/genome_mapper.h" // GenomeMapper
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -13,6 +13,7 @@
 struct SearchResult {
   size_t offset;
   size_t length;
+  bool operator==(const SearchResult &other) const;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,10 +66,11 @@ public:
 private:
   // ── Internal data ─────────────────────────────────────────────────────────
 
-  const char*_data = nullptr; //< Pointer to the text (not owned when constructed from GenomeMapper).
-  std::string _owned;  //< Storage when constructed from string.
-  size_t _num   = 0;  //< Text length.
-  std::vector<size_t>_sa; //< The suffix array.
+  const char *_data = nullptr; //< Pointer to the text (not owned when
+                               //constructed from GenomeMapper).
+  std::string _owned;          //< Storage when constructed from string.
+  size_t _num = 0;             //< Text length.
+  std::vector<size_t> _sa;     //< The suffix array.
   bool _ready = false;
 
   // ── SA-IS implementation ──────────────────────────────────────────────────
@@ -80,7 +82,8 @@ private:
   // s – input string as integers (sentinel = 0, must be unique minimum)
   // sa – output suffix array (same length as s)
   // alphabetSize – one past the maximum symbol value
-  static void sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,int64_t alphabetSize);
+  static void sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
+                    int64_t alphabetSize);
 
   // ── Binary-search helpers for pattern search ──────────────────────────────
 
