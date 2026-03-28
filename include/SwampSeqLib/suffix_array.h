@@ -88,8 +88,8 @@ private:
   // s – input string as integers (sentinel = 0, must be unique minimum)
   // sa – output suffix array (same length as s)
   // alphabetSize – one past the maximum symbol value
-  static void sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa,
-                    int64_t alphabetSize);
+  static void sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa,
+                    uint32_t alphabetSize);
 
   // ── Binary-search helpers for pattern search ──────────────────────────────
 

@@ -61,11 +61,11 @@ SuffixArray::SuffixArray(const std::string &text) {
 // ── Helpers (file-scope) ─────────────────────────────────
 
 // Return bucket sizes: buckets[c] = number of occurrences of symbol c.
-std::vector<size_t> getBuckets(const std::vector<int64_t> &symbols, int64_t alphabetSize) {
+std::vector<size_t> getBuckets(const std::vector<uint32_t> &symbols, uint32_t alphabetSize) {
   const size_t bucketCount = static_cast<size_t>(alphabetSize);
   std::vector<size_t> buckets(bucketCount, 0);
 
-  for (int64_t symbol : symbols) {
+  for (uint32_t symbol : symbols) {
     ++buckets[static_cast<size_t>(symbol)];
   }
 
@@ -93,8 +93,8 @@ void getBucketTails(const std::vector<size_t> &buckets, std::vector<size_t> &tai
 // ── Induced sorting pass ───────────────────────────────────────────────────
 
 // Forward pass: place all L-type suffixes using already-placed entries in sa.
-void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
-                 const std::vector<size_t> &buckets, int64_t alphabetSize) {
+void induceSortL(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
+                 const std::vector<size_t> &buckets, uint32_t alphabetSize) {
   const size_t textSize = s.size();
   std::vector<size_t> heads(static_cast<size_t>(alphabetSize));
   getBucketHeads(buckets, heads);
@@ -121,8 +121,8 @@ void induceSortL(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
 }
 
 // Backward pass: place all S-type suffixes.
-void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
-                 const std::vector<size_t> &buckets, int64_t alphabetSize) {
+void induceSortS(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
+                 const std::vector<size_t> &buckets, uint32_t alphabetSize) {
   const size_t n = s.size();
   std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
   getBucketTails(buckets, tails);
@@ -147,7 +147,7 @@ void induceSortS(const std::vector<int64_t> &s, std::vector<size_t> &sa, const s
 // SuffixArray::sa_is  —  recursive 
 // ─────────────────────────────────────────────────────────────────────────────
 
-void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa, int64_t alphabetSize) {
+void SuffixArray::sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa, uint32_t alphabetSize) {
   const size_t kEmptySlot = SIZE_MAX;
   const size_t n = s.size();
 
@@ -202,8 +202,8 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa, 
     return;
   }
 
-  std::vector<int64_t> rank(n, -1);
-  int64_t currentRank = 0;
+  std::vector<uint32_t> rank(n, -1);
+  uint32_t currentRank = 0;
   rank[sortedLMSPositions[0]] = 0;
 
   for (size_t i = 1; i < sortedLMSPositions.size(); ++i) {
@@ -249,16 +249,16 @@ void SuffixArray::sa_is(const std::vector<int64_t> &s, std::vector<size_t> &sa, 
     }
   }
 
-  std::vector<int64_t> reducedString;
+  std::vector<uint32_t> reducedString;
   reducedString.reserve(lmsPositionsInTextOrder.size());
   for (size_t pos : lmsPositionsInTextOrder) {
     reducedString.push_back(rank[pos]);
   }
 
-  const int64_t reducedAlphabet = currentRank + 1;
+  const uint32_t reducedAlphabet = currentRank + 1;
   std::vector<size_t> saReduced(reducedString.size());
 
-  if (reducedAlphabet < static_cast<int64_t>(reducedString.size())) {
+  if (reducedAlphabet < static_cast<uint32_t>(reducedString.size())) {
     sa_is(reducedString, saReduced, reducedAlphabet);
   } else {
     for (size_t i = 0; i < reducedString.size(); ++i) {
@@ -286,11 +286,11 @@ void SuffixArray::buildSuffixArray() {
     return;
   }
 
-  constexpr int64_t sentinel = 0;
-  constexpr int64_t alphabetSize = 256;
+  constexpr uint32_t sentinel = 0;
+  constexpr uint32_t alphabetSize = 256;
 
   const size_t totalSize = _num + 1; // text + sentinel
-  std::vector<int64_t> textWithSentinel(totalSize);
+  std::vector<uint32_t> textWithSentinel(totalSize);
 
   for (size_t i = 0; i < _num; ++i) {
     textWithSentinel[i] = static_cast<unsigned char>(_data[i]);
