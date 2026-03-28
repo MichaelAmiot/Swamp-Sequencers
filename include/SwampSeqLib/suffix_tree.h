@@ -1,144 +1,117 @@
 #pragma once
 #include "SwampSeqLib/genome_mapper.h"
+#include <array>
 #include <cstdint>
+#include <limits>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 // ─────────────────────────────────────────────────────────────────────────────
 // STSearchResult
-//   Returned by SuffixTree::search().
 //   offset – 0-based position of the match in the original text.
-//   length – length of the matched pattern (equals pattern.size()).
+//   length – length of the matched pattern.
 // ─────────────────────────────────────────────────────────────────────────────
 struct STSearchResult {
-  int64_t offset;
-  int64_t length;
-  bool operator==(const STSearchResult &other) const;
+    uint32_t offset;
+    uint32_t length;
+
+    bool operator==(const STSearchResult &other) const;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SuffixTree
-//
-// Builds a compressed trie (Patricia trie) of all suffixes of a text using
-// Ukkonen's online algorithm in O(n) time and O(n) space.
-//
-// Every internal node and leaf is represented by a Node struct.  Edges are
-// labelled by half-open intervals [start, end) into the original text, so no
-// substring copies are made during construction.
-//
-// Leaf end pointers all point to a single shared "global end" int64_t that is
-// incremented with each character — this is the core of Ukkonen's O(n)
-// guarantee (open-ended leaves never need updating individually).
-//
-// Lifetime rules mirror SuffixArray:
-//   • GenomeMapper constructor — raw pointer stored; mapper must outlive this.
-//   • std::string constructor  — text copied into _owned; self-managed.
-//
-// Search runs in O(m) where m = |pattern|.
+
+// Ukkonen's online O(n) suffix tree, optimised for genomic alphabets.
+
+// Hard cap: 500 Mbp. Above that, peak RAM exceeds ~20 GB which is
+// impractical for a suffix tree; use SuffixArray instead.
+
+// Alphabet mapping (ALPHA = 6):
+//   A→0  C→1  G→2  T→3  N→4  sentinel→5
+//   Any other byte maps to slot 4 (N) as a safe fallback.
+
+// Lifetime:
+//   GenomeMapper constructor — raw pointer stored; mapper must outlive this.
+//   std::string constructor  — text copied into _owned; self-managed.
+
+// Search: O(m), m = pattern length.
 // ─────────────────────────────────────────────────────────────────────────────
 class SuffixTree {
 public:
-  // ── Construction ──────────────────────────────────────────────────────────
+    // ── Construction ──────────────────────────────────────────────────────────
+    explicit SuffixTree(const GenomeMapper &mapper);
 
-  // Build from a GenomeMapper. Mapper must outlive this object.
-  explicit SuffixTree(const GenomeMapper &mapper);
+    explicit SuffixTree(const std::string &text);
 
-  // Build from an arbitrary string (text copied internally).
-  explicit SuffixTree(const std::string &text);
+    SuffixTree(const SuffixTree &) = delete;
 
-  // Non-copyable; movable.
-  SuffixTree(const SuffixTree &)            = delete;
-  SuffixTree &operator=(const SuffixTree &) = delete;
-  SuffixTree(SuffixTree &&)                 = default;
-  SuffixTree &operator=(SuffixTree &&)      = default;
+    SuffixTree &operator=(const SuffixTree &) = delete;
 
-  ~SuffixTree() = default;
+    SuffixTree(SuffixTree &&) = default;
 
-  // ── Query ─────────────────────────────────────────────────────────────────
+    SuffixTree &operator=(SuffixTree &&) = default;
 
-  // Return all positions at which pattern occurs in the text, sorted by
-  // ascending offset. Returns empty vector if pattern is absent or the tree
-  // has not been built successfully.
-  std::vector<STSearchResult> search(const std::string &pattern) const;
+    ~SuffixTree() = default;
 
-  // Number of characters in the indexed text.
-  int64_t size() const noexcept { return _num; }
+    // ── Query ─────────────────────────────────────────────────────────────────
+    // All positions where pattern occurs, sorted ascending. Empty if absent.
+    std::vector<STSearchResult> search(const std::string &pattern) const;
 
-  // True once the suffix tree has been successfully built.
-  bool ready() const noexcept { return _ready; }
+    uint32_t size() const noexcept { return _textLength; }
+    bool ready() const noexcept { return _isReady; }
 
 private:
-  // ── Node ──────────────────────────────────────────────────────────────────
-  //
-  // Each node represents a state in the implicit suffix tree.
-  //
-  //  start      – index into _text where this edge label begins.
-  //  end        – pointer to the (exclusive) end of the edge label.
-  //               For leaves this points to _globalEnd (shared, open).
-  //               For internal nodes this points to _nodeEnds[nodeIndex].
-  //  suffixLink – Ukkonen suffix link; points to the longest proper suffix
-  //               state reachable from this node (-1 = unset).
-  //  suffixIndex – for leaves: which suffix starts here (-1 for internal).
-  //  children   – map from first character of child edge → child node index.
-  //               Using unordered_map keeps child lookup O(1) average.
+    // ── Alphabet ───────────────────────────────────────────────────────────────
+    static constexpr int kAlphabetSize = 6; // A C G T N sentinel
+    static constexpr uint32_t kInvalidIndex = std::numeric_limits<uint32_t>::max();
+    static constexpr uint32_t kLeafEnd = kInvalidIndex; // endIdx value for leaves
 
-  struct Node {
-    int64_t  start      = -1;
-    int64_t *end        = nullptr;   // points into _nodeEnds or _globalEnd
-    int64_t  suffixLink = -1;
-    int64_t  suffixIndex= -1;        // -1 for internal nodes
-    std::unordered_map<int64_t, int64_t> children;
+    // Map a text byte to a child-array slot [0, kAlphabetSize).
+    static int charToSlot(unsigned char c) noexcept;
 
-    // Edge length. Leaves use *end which equals _globalEnd at query time.
-    int64_t edgeLength() const { return *end - start; }
-  };
+    // ── Node (40 bytes) ───────────────────────────────────────────────────────
+    struct Node {
+        uint32_t start = 0;
+        uint32_t suffixIndex = kInvalidIndex; // kInvalidIndex for internal nodes
+        uint32_t suffixLink = 0; // default to root
+        uint32_t endIdx = kInvalidIndex; // kLeafEnd for leaves; else index into _nodeEnds
+        std::array<uint32_t, kAlphabetSize> children{};
 
-  // ── Internal data ─────────────────────────────────────────────────────────
+        uint32_t edgeLength(uint32_t currentGlobalEnd, const std::vector<uint32_t> &nodeEnds) const noexcept;
+        uint32_t edgeEnd(uint32_t currentGlobalEnd, const std::vector<uint32_t> &nodeEnds) const noexcept;
 
-  const char  *_data  = nullptr;   // raw text pointer (not owned for mapper)
-  std::string  _owned;             // owned copy when built from std::string
-  int64_t      _num   = 0;         // text length (excludes sentinel)
-  bool         _ready = false;
+    };
 
-  // Node pool — avoids pointer invalidation on reallocation.
-  std::vector<Node>    _nodes;
-  // Per-internal-node end values (leaves share _globalEnd).
-  std::vector<int64_t> _nodeEnds;
-  // The shared open end for all leaves; incremented each phase.
-  int64_t              _globalEnd = 0;
+    // ── Internal data ─────────────────────────────────────────────────────────
+    const char *_textData = nullptr;
+    std::string _owned;
+    uint32_t _textLength = 0;
+    bool _isReady = false;
+    std::vector<Node> _nodes;
+    std::vector<uint32_t> _nodeEnds; // end values for internal nodes
+    uint32_t _currentGlobalEnd = 0;
 
-  // Ukkonen active point
-  int64_t _activeNode   = 0;   // index into _nodes
-  int64_t _activeEdge   = -1;  // first character of the active edge (as index)
-  int64_t _activeLength = 0;
-  int64_t _remaining    = 0;   // suffixes yet to be inserted
+    // Ukkonen active point
+    uint32_t _activeNode = 0;
+    int _activeSlot = -1; // child slot of the active edge
+    uint32_t _activeLength = 0;
+    uint32_t _remaining = 0;
 
-  // Root is always node 0; -1 sentinel node for suffix links from root.
-  static constexpr int64_t ROOT     =  0;
-  static constexpr int64_t NO_NODE  = -1;
+    static constexpr uint32_t kRoot = 0;
 
-  // ── Ukkonen construction ──────────────────────────────────────────────────
+    // ── Build ─────────────────────────────────────────────────────────────────
+    void buildSuffixTree();
 
-  void buildSuffixTree();
+    void initializeBuildState();
 
-  // Allocate a new leaf node for the edge starting at `start`.
-  int64_t newLeaf(int64_t start);
+    uint32_t newLeaf(uint32_t start);
 
-  // Allocate a new internal node for the edge interval [start, end).
-  int64_t newInternal(int64_t start, int64_t end);
+    uint32_t newInternal(uint32_t start, uint32_t end);
 
-  // Extend the tree by one character at position `pos`.
-  void extendTree(int64_t pos);
+    void extendTree(uint32_t pos);
 
-  // ── Post-construction annotation ─────────────────────────────────────────
+    void annotateSuffixIndices(); // iterative DFS
 
-  // DFS to stamp suffix indices onto every leaf.
-  void annotateSuffixIndices(int64_t nodeIdx, int64_t labelHeight);
-
-  // ── Search helpers ────────────────────────────────────────────────────────
-
-  // Collect all leaf suffixIndex values in the subtree rooted at nodeIdx.
-  void collectLeaves(int64_t nodeIdx, std::vector<STSearchResult> &out,
-                     int64_t patternLength) const;
+    // ── Search ────────────────────────────────────────────────────────────────
+    void collectLeaves(uint32_t subtreeRoot, std::vector<STSearchResult> &out, uint32_t patternLength) const; // iterative DFS
 };
