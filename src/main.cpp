@@ -17,7 +17,7 @@ using namespace ftxui;
 
 int main() {
   std::string searchPattern = "ATGC";
-  std::string filePath = "data/ecoli/ecoli.fna";
+  std::string filePath = "bin/ecoli.fna";
   int algoChoice = 0;
   std::vector<std::string> algoEntries = {"Suffix Array", "Suffix Tree",
                                           "Compare Both"};
