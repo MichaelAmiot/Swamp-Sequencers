@@ -1,7 +1,6 @@
 #include "SwampSeqLib/suffix_tree.h"
 #include <algorithm>
 #include <cstdint>
-#include <limits>
 #include <stdexcept>
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -13,7 +12,7 @@ bool STSearchResult::operator==(const STSearchResult &other) const {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// kAlphabetSizebet
+// kAlphabetSize
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Map a raw byte to a children[] slot index.
