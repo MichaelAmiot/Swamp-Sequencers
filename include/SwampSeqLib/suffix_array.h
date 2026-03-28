@@ -10,6 +10,7 @@
 //   offset – 0-based position of the match in the original text.
 //   length – length of the matched pattern (equals pattern.size()).
 // ─────────────────────────────────────────────────────────────────────────────
+
 struct SearchResult {
   size_t offset;
   size_t length;
@@ -29,12 +30,13 @@ struct SearchResult {
 //
 // Search runs in O(m log n) where m = pattern length and n = text length.
 // ─────────────────────────────────────────────────────────────────────────────
+
 class SuffixArray {
 public:
+
   // ── Construction ──────────────────────────────────────────────────────────
 
-  // Build from a GenomeMapper.  The mapper must be valid and must outlive
-  // this object.
+  // Build from a GenomeMapper.  The mapper must be valid and must outlive this object.
   explicit SuffixArray(const GenomeMapper &mapper);
 
   // Build from an arbitrary string (text is copied internally).
@@ -88,8 +90,7 @@ private:
   // s – input string as integers (sentinel = 0, must be unique minimum)
   // sa – output suffix array (same length as s)
   // alphabetSize – one past the maximum symbol value
-  static void sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa,
-                    uint32_t alphabetSize);
+  static void sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa, uint32_t alphabetSize);
 
   // ── Binary-search helpers for pattern search ──────────────────────────────
 

@@ -134,7 +134,7 @@ void SuffixTree::extendTree(uint32_t pos) {
     while (_remaining > 0) {
         // If we are at a node, the active edge starts with the current input character.
         if (_activeLength == 0) {
-            _activeSlot = SuffixTree::charToSlot(textChar(_textData, _textLength, pos));
+            _activeSlot = charToSlot(textChar(_textData, _textLength, pos));
         }
 
         // Child reached from the active node via the active edge.
@@ -155,7 +155,7 @@ void SuffixTree::extendTree(uint32_t pos) {
             // If the active point spans the full edge, move down to the child node.
             const uint32_t edgeLen = _nodes[childIdx].edgeLength(_currentGlobalEnd, _nodeEnds);
             if (_activeLength >= edgeLen) {
-                _activeSlot = SuffixTree::charToSlot(textChar(_textData, _textLength, pos - _remaining + 1 + edgeLen));
+                _activeSlot = charToSlot(textChar(_textData, _textLength, pos - _remaining + 1 + edgeLen));
                 _activeLength -= edgeLen;
                 _activeNode = childIdx;
                 continue;
@@ -208,7 +208,7 @@ void SuffixTree::extendTree(uint32_t pos) {
             && _activeLength > 0) {
             --_activeLength;
             const uint32_t nextEdgePos = pos - _remaining + 1;
-            _activeSlot = SuffixTree::charToSlot(textChar(_textData, _textLength, nextEdgePos));
+            _activeSlot = charToSlot(textChar(_textData, _textLength, nextEdgePos));
         } else {
             const uint32_t link = _nodes[_activeNode].suffixLink;
             _activeNode = (link != kInvalidIndex) ? link : kRoot;

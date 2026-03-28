@@ -62,7 +62,7 @@ SuffixArray::SuffixArray(const std::string &text) {
 
 // Return bucket sizes: buckets[c] = number of occurrences of symbol c.
 std::vector<size_t> getBuckets(const std::vector<uint32_t> &symbols, uint32_t alphabetSize) {
-    const size_t bucketCount = static_cast<size_t>(alphabetSize);
+    const size_t bucketCount = alphabetSize;
     std::vector<size_t> buckets(bucketCount, 0);
 
     for (uint32_t symbol: symbols) {
@@ -96,7 +96,7 @@ void getBucketTails(const std::vector<size_t> &buckets, std::vector<size_t> &tai
 void induceSortL(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const std::vector<bool> &isSType,
                  const std::vector<size_t> &buckets, uint32_t alphabetSize) {
     const size_t textSize = s.size();
-    std::vector<size_t> heads(static_cast<size_t>(alphabetSize));
+    std::vector<size_t> heads(alphabetSize);
     getBucketHeads(buckets, heads);
 
     for (size_t i = 0; i < textSize; ++i) {
@@ -120,7 +120,7 @@ void induceSortL(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const 
         }
 
         // Place the predecessor at the current head of its bucket.
-        const size_t bucket = static_cast<size_t>(s[predecessor]);
+        const size_t bucket = s[predecessor];
         sa[heads[bucket]++] = predecessor;
     }
 }
@@ -129,7 +129,7 @@ void induceSortL(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const 
 void induceSortS(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const std::vector<bool> &is_S,
                  const std::vector<size_t> &buckets, uint32_t alphabetSize) {
     const size_t n = s.size();
-    std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
+    std::vector<size_t> tails(alphabetSize);
     getBucketTails(buckets, tails);
 
     for (size_t pos = n; pos-- > 0;) {
@@ -143,7 +143,7 @@ void induceSortS(const std::vector<uint32_t> &s, std::vector<size_t> &sa, const 
             continue;
         }
 
-        const size_t bucket = static_cast<size_t>(s[pred]);
+        const size_t bucket = s[pred];
         sa[tails[bucket]--] = pred;
     }
 }
@@ -158,7 +158,7 @@ void SuffixArray::sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa,
 
     // Classify every position as S-type or L-type.
     // The last position is always S-type because it is the sentinel.
-    std::vector<bool> isSType(n, false);
+    std::vector isSType(n, false);
     isSType[n - 1] = true;
     for (size_t i = n - 1; i-- > 0;) {
         isSType[i] = (s[i] < s[i + 1]) || (s[i] == s[i + 1] && isSType[i + 1]);
@@ -175,7 +175,7 @@ void SuffixArray::sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa,
     auto placeLMSIntoBuckets = [&](const std::vector<size_t> &orderedLMSPositions) {
         sa.assign(n, kUnusedSlot);
 
-        std::vector<size_t> tails(static_cast<size_t>(alphabetSize));
+        std::vector<size_t> tails(alphabetSize);
         getBucketTails(buckets, tails);
 
         // Insert from right to left so relative bucket order is preserved.
@@ -305,7 +305,7 @@ void SuffixArray::sa_is(const std::vector<uint32_t> &s, std::vector<size_t> &sa,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildSuffixArray  —  driver
+// buildSuffixArray
 // ─────────────────────────────────────────────────────────────────────────────
 
 void SuffixArray::buildSuffixArray() {
