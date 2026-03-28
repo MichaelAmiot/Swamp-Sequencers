@@ -31,6 +31,9 @@ FetchContent_Declare(ftxui
 )
 FetchContent_MakeAvailable(ftxui)
 
+
+
+
 # Add src subdirectory
 add_subdirectory(src)
 

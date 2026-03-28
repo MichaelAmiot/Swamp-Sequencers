@@ -1,11 +1,13 @@
 #include "SwampSeqLib/genome_mapper.h"
 #include "SwampSeqLib/suffix_array.h"
+#include "SwampSeqLib/suffix_tree.h"
 #include <algorithm>
 #include <chrono>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <iomanip>
+#include <locale>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -70,19 +72,40 @@ int main() {
       }
 
       // Suffix Array Search
-      SuffixArray sa(map);
-      auto start = std::chrono::steady_clock::now();
-      auto saRes = sa.search(searchPattern);
-      auto end = std::chrono::steady_clock::now();
+      std::vector<SearchResult> saRes;
+      double saTimeMs;
+      int saMatchCount;
+      if (algoChoice == 0 || algoChoice == 2) {
+        SuffixArray sa(map);
 
-      int matchCount = static_cast<int>(saRes.size());
-      double timeMs =
-          std::chrono::duration<double>(end - start).count() * 1000.0;
+        auto saStart = std::chrono::steady_clock::now();
+        saRes = sa.search(searchPattern);
+        auto saEnd = std::chrono::steady_clock::now();
+
+        saMatchCount = static_cast<int>(saRes.size());
+        saTimeMs =
+            std::chrono::duration<double>(saEnd - saStart).count() * 1000.0;
+      }
+      // Suffix Tree Search
+      std::vector<STSearchResult> stRes;
+      double stTimeMs;
+      int stMatchCount;
+      if (algoChoice == 1 || algoChoice == 2) {
+        SuffixTree st(map);
+
+        auto stStart = std::chrono::steady_clock::now();
+        stRes = st.search(searchPattern);
+        auto stEnd = std::chrono::steady_clock::now();
+
+        stMatchCount = static_cast<int>(saRes.size());
+        stTimeMs =
+            std::chrono::duration<double>(stEnd - stStart).count() * 1000.0;
+      }
 
       // Build previews on background thread
       std::vector<std::string> localStrings;
       const char *data = map.data();
-      int previewLimit = std::min<int>(matchCount, 2000);
+      int previewLimit = std::min<int>(saMatchCount, 2000);
       int contextLen = 25;
 
       for (int i = 0; i < previewLimit; i++) {
@@ -98,15 +121,32 @@ int main() {
 
       // Format the time to 1 decimal place
       std::stringstream ss;
-      ss << std::fixed << std::setprecision(1) << timeMs;
-      std::string formattedTime = ss.str();
+      ss.imbue(std::locale::classic());
+      ss << std::fixed << std::setprecision(1) << saTimeMs;
+      std::string saFormattedTime = ss.str();
+
+      ss.str("");
+      ss.clear();
+      ss << std::fixed << std::setprecision(1) << stTimeMs;
+      std::string stFormattedTime = ss.str();
 
       // Update UI state
-      screen.Post([&, matchCount, formattedTime, localStrings] {
+      screen.Post([&, saMatchCount, saFormattedTime, stMatchCount,
+                   stFormattedTime, localStrings] {
         previewLines = std::move(localStrings);
         statusText = "Benchmark Complete!";
-        resultText = "Suffix Array: " + formattedTime + "ms | " +
-                     std::to_string(matchCount) + " matches found.";
+        resultText = "";
+        if (algoChoice == 0 || algoChoice == 2) {
+          resultText += "Suffix Array: " + saFormattedTime + "ms, " +
+                        std::to_string(saMatchCount) + " matches found.";
+        }
+        if (algoChoice == 2) {
+          resultText += " | ";
+        }
+        if (algoChoice == 1 || algoChoice == 2) {
+          resultText += "Suffix Tree: " + stFormattedTime + "ms, " +
+                        std::to_string(stMatchCount) + " matches found.";
+        }
         isRunning = false;
       });
 
