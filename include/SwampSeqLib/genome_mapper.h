@@ -30,7 +30,7 @@ class GenomeMapper {
 
 public:
   // Constructor/Destructor
-  GenomeMapper(const std::string &filepath);
+  explicit GenomeMapper(const std::string &filePath);
   GenomeMapper();
   ~GenomeMapper();
 

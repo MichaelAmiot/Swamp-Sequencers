@@ -2,12 +2,16 @@
 #include <cctype>
 #include <cstddef>
 #include <cstring>
+#include <errhandlingapi.h>
+#include <iostream>
+#include <stdexcept>
 #ifdef OS_WINDOWS
 #include <fileapi.h>
 #include <handleapi.h>
 #include <memoryapi.h>
 #include <winnt.h>
 #endif
+#include <stdexcept>
 #include <string>
 
 // Generator
@@ -39,7 +43,7 @@ void GenomeMapper::fromFile(const std::string &filePath) {
   auto *buffer = static_cast<char *>(_mappingBase);
   size_t totalRead = 0;
   while (totalRead < _mappingSize - 1) {
-    unsigned long long kMaxCopyChunk;
+    unsigned long long kMaxCopyChunk = 1 << 24;
     const size_t chunkSize =
         std::min(_mappingSize - 1 - totalRead, kMaxCopyChunk);
     DWORD bytesRead = 0;
@@ -47,7 +51,7 @@ void GenomeMapper::fromFile(const std::string &filePath) {
                   static_cast<DWORD>(chunkSize), &bytesRead, NULL)) {
       UnmapViewOfFile(_mappingBase);
       _mappingBase = nullptr;
-      return;
+      throw std::runtime_error(std::to_string(GetLastError()));
     }
     if (bytesRead == 0)
       break;
