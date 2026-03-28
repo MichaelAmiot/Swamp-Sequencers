@@ -16,6 +16,7 @@
 using namespace ftxui;
 
 int main() {
+  // Shared state
   std::string searchPattern = "ATGC";
   std::string filePath = "bin/ecoli.fna";
   int algoChoice = 0;
@@ -27,7 +28,7 @@ int main() {
   std::vector<std::string> previewLines;
   int selectedResult = 0;
   bool isRunning = false;
-
+  // UI components
   auto screen = ScreenInteractive::TerminalOutput();
 
   Component inputFilepath = Input(&filePath, "e.g., ./data/genome.fna");
@@ -77,7 +78,11 @@ int main() {
 
       // Suffix Array
       if (algoChoice == 0 || algoChoice == 2) {
+        statusText = "Building Suffix Array...";
+        screen.Post(Event::Custom);
         SuffixArray sa(map);
+        statusText = "Searching Suffix Array...";
+        screen.Post(Event::Custom);
         auto saStart = std::chrono::steady_clock::now();
         saRes = sa.search(searchPattern);
         auto saEnd = std::chrono::steady_clock::now();
@@ -88,7 +93,11 @@ int main() {
 
       // Suffix Tree
       if (algoChoice == 1 || algoChoice == 2) {
+        statusText = "Building Suffix Tree...";
+        screen.Post(Event::Custom);
         SuffixTree st(map);
+        statusText = "Searching Suffix Tree...";
+        screen.Post(Event::Custom);
         auto stStart = std::chrono::steady_clock::now();
         stRes = st.search(searchPattern);
         auto stEnd = std::chrono::steady_clock::now();
