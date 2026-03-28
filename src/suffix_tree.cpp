@@ -238,37 +238,33 @@ void SuffixTree::annotateSuffixIndices() {
     stack.push_back({kRoot, 0u});
 
     while (!stack.empty()) {
-        // Process the most recently discovered node.
         auto [nodeIdx, height] = stack.back();
         stack.pop_back();
 
         Node &node = _nodes[nodeIdx];
-        bool isLeaf = true;
 
         // Visit all children and accumulate path length along each edge.
+        // Track whether any child exists to identify leaves without a second pass.
+        bool hasChild = false;
         for (int slot = 0; slot < kAlphabetSize; ++slot) {
             const uint32_t child = node.children[slot];
-            if (child == kInvalidIndex) {
+            if (child == kInvalidIndex)
                 continue;
-            }
-
-            isLeaf = false;
-
-            // Child height = current path height + edge length to the child.
+            hasChild = true;
             const uint32_t childHeight = height + _nodes[child].edgeLength(_currentGlobalEnd, _nodeEnds);
             stack.push_back({child, childHeight});
         }
 
-        // A leaf suffix corresponds to the text position:
-        //   suffixIndex = (text length including sentinel) - path height.
-        if (isLeaf) {
+        // A leaf has no children. Stamp its suffix index:
+        //   suffixIndex = (textLength + 1) - path height from root.
+        if (!hasChild) {
             node.suffixIndex = (_textLength + 1) - height;
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// buildSuffixTree 
+// buildSuffixTree
 // ─────────────────────────────────────────────────────────────────────────────
 
 void SuffixTree::initializeBuildState() {
@@ -300,16 +296,18 @@ void SuffixTree::buildSuffixTree() {
         return;
     }
 
+    // Initialize root node, clear state, then reserve — order matters so
+    // reserve happens on the already-cleared vectors.
+    initializeBuildState();
+
     // Build the tree for the text plus one sentinel character.
     const uint32_t textLengthWithSentinel = _textLength + 1;
 
     // Reserve enough space for the worst-case number of nodes and end values.
+    // 2n+2 nodes (n leaves + up to n-1 internal + root + sentinel leaf).
     const uint32_t maxNodeCount = 2 * textLengthWithSentinel + 4;
     _nodes.reserve(maxNodeCount);
     _nodeEnds.reserve(textLengthWithSentinel + 2);
-
-    // Initialize the root node and all build-time variables.
-    initializeBuildState();
 
     // Extend the tree one character at a time, including the sentinel.
     for (uint32_t pos = 0; pos < textLengthWithSentinel; ++pos) {
@@ -325,39 +323,31 @@ void SuffixTree::buildSuffixTree() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 void SuffixTree::collectLeaves(uint32_t subtreeRoot, std::vector<STSearchResult> &out, uint32_t patternLength) const {
-    // Use an explicit stack instead of recursion to avoid deep call chains.
-    static constexpr std::size_t INITIAL_STACK_CAPACITY = 1024;
-
     std::vector<uint32_t> stack;
-    stack.reserve(INITIAL_STACK_CAPACITY);
+    stack.reserve(64);
     stack.push_back(subtreeRoot);
 
     while (!stack.empty()) {
-        // Process the next node in depth-first order.
         const uint32_t currentNodeIndex = stack.back();
         stack.pop_back();
 
         const Node &currentNode = _nodes[currentNodeIndex];
-        bool hasChildren = false;
 
-        // Push all existing children onto the stack.
-        for (std::size_t childSlot = 0;
-             childSlot < static_cast<std::size_t>(kAlphabetSize); ++childSlot) {
-            const uint32_t childIndex = currentNode.children[childSlot];
-            if (childIndex == kInvalidIndex) {
-                continue;
+        // Leaves were stamped by annotateSuffixIndices(); internal nodes keep kInvalidIndex.
+        // Early-out: no need to scan children slots for leaves.
+        if (currentNode.suffixIndex != kInvalidIndex) {
+            if (currentNode.suffixIndex < _textLength) {
+                out.push_back({currentNode.suffixIndex, patternLength});
             }
-
-            hasChildren = true;
-            stack.push_back(childIndex);
+            continue; // leaves have no children worth visiting
         }
 
-        // A valid result is a leaf with a suffix index inside the text bounds.
-        const bool isValidLeaf = !hasChildren && currentNode.suffixIndex != kInvalidIndex && currentNode.suffixIndex <
-                                 _textLength;
-
-        if (isValidLeaf) {
-            out.push_back({currentNode.suffixIndex, patternLength});
+        // Internal node: push all existing children onto the DFS stack.
+        for (int slot = kAlphabetSize - 1; slot >= 0; --slot) {
+            const uint32_t childIndex = currentNode.children[slot];
+            if (childIndex != kInvalidIndex) {
+                stack.push_back(childIndex);
+            }
         }
     }
 }
