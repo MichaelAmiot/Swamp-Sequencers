@@ -16,7 +16,6 @@
 using namespace ftxui;
 
 int main() {
-  // Shared Application State
   std::string searchPattern = "ATGC";
   std::string filePath = "data/ecoli/ecoli.fna";
   int algoChoice = 0;
@@ -31,15 +30,11 @@ int main() {
 
   auto screen = ScreenInteractive::TerminalOutput();
 
-  // Interactive Components
   Component inputFilepath = Input(&filePath, "e.g., ./data/genome.fna");
   Component inputPattern = Input(&searchPattern, "e.g., ATGC");
   Component algoRadiobox = Radiobox(&algoEntries, &algoChoice);
-
-  // Menu component for high-performance scrolling
   Component resultList = Menu(&previewLines, &selectedResult);
 
-  // Benchmarking Logic
   Component runButton = Button("Run Benchmark", [&] {
     if (isRunning)
       return;
@@ -49,7 +44,7 @@ int main() {
     resultText = "";
     previewLines.clear();
 
-    std::thread([&, filePath, searchPattern] {
+    std::thread([&, filePath, searchPattern, algoChoice] {
       GenomeMapper map;
       try {
         map.fromFile(filePath);
@@ -71,46 +66,51 @@ int main() {
         return;
       }
 
-      // Suffix Array Search
+      // Initialize all variables to safe defaults
       std::vector<SearchResult> saRes;
-      double saTimeMs;
-      int saMatchCount;
+      double saTimeMs = 0.0;
+      int saMatchCount = 0;
+
+      std::vector<STSearchResult> stRes;
+      double stTimeMs = 0.0;
+      int stMatchCount = 0;
+
+      // Suffix Array
       if (algoChoice == 0 || algoChoice == 2) {
         SuffixArray sa(map);
-
         auto saStart = std::chrono::steady_clock::now();
         saRes = sa.search(searchPattern);
         auto saEnd = std::chrono::steady_clock::now();
-
         saMatchCount = static_cast<int>(saRes.size());
         saTimeMs =
             std::chrono::duration<double>(saEnd - saStart).count() * 1000.0;
       }
-      // Suffix Tree Search
-      std::vector<STSearchResult> stRes;
-      double stTimeMs;
-      int stMatchCount;
+
+      // Suffix Tree
       if (algoChoice == 1 || algoChoice == 2) {
         SuffixTree st(map);
-
         auto stStart = std::chrono::steady_clock::now();
         stRes = st.search(searchPattern);
         auto stEnd = std::chrono::steady_clock::now();
-
-        stMatchCount = static_cast<int>(saRes.size());
+        stMatchCount = static_cast<int>(stRes.size());
         stTimeMs =
             std::chrono::duration<double>(stEnd - stStart).count() * 1000.0;
       }
 
-      // Build previews on background thread
+      // Logic: Build previews from whichever one we ran
       std::vector<std::string> localStrings;
       const char *data = map.data();
-      int previewLimit = std::min<int>(saMatchCount, 2000);
+
+      // Determine which results to use for the preview list
+      int totalToDisplay = (algoChoice == 1) ? stMatchCount : saMatchCount;
+      int previewLimit = std::min<int>(totalToDisplay, 2000);
       int contextLen = 25;
 
       for (int i = 0; i < previewLimit; i++) {
-        size_t idx = saRes[i].offset;
-        size_t startIdx = (idx > contextLen) ? (idx - contextLen) : 0;
+        // Safe access: Use stRes if we did Tree, otherwise saRes
+        size_t idx = (algoChoice == 1) ? stRes[i].offset : saRes[i].offset;
+
+        size_t startIdx = (idx > (size_t)contextLen) ? (idx - contextLen) : 0;
         size_t endIdx = std::min<size_t>(
             map.size(), idx + searchPattern.size() + contextLen);
 
@@ -119,7 +119,7 @@ int main() {
                                snippet + "...");
       }
 
-      // Format the time to 1 decimal place
+      // Format times
       std::stringstream ss;
       ss.imbue(std::locale::classic());
       ss << std::fixed << std::setprecision(1) << saTimeMs;
@@ -130,58 +130,43 @@ int main() {
       ss << std::fixed << std::setprecision(1) << stTimeMs;
       std::string stFormattedTime = ss.str();
 
-      // Update UI state
       screen.Post([&, saMatchCount, saFormattedTime, stMatchCount,
-                   stFormattedTime, localStrings] {
+                   stFormattedTime, localStrings, algoChoice] {
         previewLines = std::move(localStrings);
         statusText = "Benchmark Complete!";
-        resultText = "";
+
+        std::string out;
         if (algoChoice == 0 || algoChoice == 2) {
-          resultText += "Suffix Array: " + saFormattedTime + "ms, " +
-                        std::to_string(saMatchCount) + " matches found.";
+          out += "Array: " + saFormattedTime + "ms (" +
+                 std::to_string(saMatchCount) + ")";
         }
-        if (algoChoice == 2) {
-          resultText += " | ";
-        }
+        if (algoChoice == 2)
+          out += " | ";
         if (algoChoice == 1 || algoChoice == 2) {
-          resultText += "Suffix Tree: " + stFormattedTime + "ms, " +
-                        std::to_string(stMatchCount) + " matches found.";
+          out += "Tree: " + stFormattedTime + "ms (" +
+                 std::to_string(stMatchCount) + ")";
         }
+        resultText = out;
         isRunning = false;
       });
 
-      // Trigger redraw immediately
       screen.Post(Event::Custom);
     }).detach();
   });
 
-  // Layout & Navigation Container
-  auto layout = Container::Vertical({
-      inputFilepath,
-      inputPattern,
-      algoRadiobox,
-      runButton,
-      resultList,
-  });
+  auto layout = Container::Vertical(
+      {inputFilepath, inputPattern, algoRadiobox, runButton, resultList});
 
-  // Renderer
   auto renderer = Renderer(layout, [&] {
     return vbox({text("SWAMP SEQUENCER") | bold | color(Color::Green) | center,
                  separator(),
-
                  hbox({text("Genome File Path : "), inputFilepath->Render()}),
                  hbox({text("Search Pattern   : "), inputPattern->Render()}),
-                 separator(),
-
-                 text("Select Data Structure:"), algoRadiobox->Render(),
-                 separator(),
-
+                 separator(), text("Select Data Structure:"),
+                 algoRadiobox->Render(), separator(),
                  runButton->Render() | center, separator(),
-
                  text(statusText) | color(Color::Yellow),
                  text(resultText) | color(Color::Cyan) | bold,
-
-                 // Results window
                  vbox({text("Results (Arrows to scroll)") | dim, separator(),
                        resultList->Render() | vscroll_indicator | frame |
                            size(HEIGHT, LESS_THAN, 15)}) |
