@@ -24,12 +24,12 @@ make
 Run the TUI interface to query the dataset.
 ```Bash
 # Swamp-Sequencers/build
-bin/SwampSequencer.exe
+bin/SwampSequencer 
 ```
 Or run the automated Google Test suite
 ```Bash
 # Swamp-Sequencers/build
-bin/SwampTests.exe
+bin/SwampTests
 ```
 ## Attribution
     - Michael Amiot
