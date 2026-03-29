@@ -2,7 +2,7 @@
 ## Overview
 Given a massive DNA genome database, finding where a specific gene sequence pattern appears is the core operation behind disease detection, ancestry matching, and drug research.
 
-This project benchmarks the performance, memory efficiency, and build constraints of two O(n) string-matching data structures: the Suffix Array (using the SA-IS algorithm) and the Suffix Tree (using Ukkonen's algorithm). We test these structures against real genome data, specifically NCBI GenBank's E. Coli strain Sakai sample chromosome found (here)[https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000008865.2/]
+This project benchmarks the performance, memory efficiency, and build constraints of two O(n) string-matching data structures: the Suffix Array (using the SA-IS algorithm) and the Suffix Tree (using Ukkonen's algorithm). We test these structures against real genome data, specifically NCBI GenBank's E. Coli strain Sakai sample chromosome found [here](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_000008865.2/).
 ## Getting Started
 ### 1. Clone the repository
 ```Bash
