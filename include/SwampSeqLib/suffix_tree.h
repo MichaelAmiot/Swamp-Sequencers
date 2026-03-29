@@ -26,6 +26,7 @@ struct STSearchResult {
 // ─────────────────────────────────────────────────────────────────────────────
 class SuffixTree {
 public:
+
   // ── Construction ──────────────────────────────────────────────────────────
 
   // Build from a GenomeMapper. Mapper must outlive this object.
@@ -43,7 +44,6 @@ public:
   ~SuffixTree() = default;
 
   // ── Query ─────────────────────────────────────────────────────────────────
-
   // Return all positions at which pattern occurs in the text, sorted by
   // ascending offset. Returns empty vector if pattern is absent or the tree
   // has not been built successfully.
@@ -56,6 +56,7 @@ public:
   bool ready() const noexcept { return _ready; }
 
 private:
+
   // ── Node ──────────────────────────────────────────────────────────────────
   // Use int64_t when your code requires a specific, predictable 64-bit integer size
   // to function correctly across different compilers and architectures

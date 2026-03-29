@@ -112,7 +112,7 @@ void SuffixTree::extendTree(int64_t pos) {
     auto childIt = activeChildren.find(activeChar);
 
     if (childIt == activeChildren.end()) {
-      // ── no edge for this character → create a new leaf. ──────────
+      // ── no edge for this character, create a new leaf. ──────────
       int64_t leaf = newLeaf(pos);
       // Re-fetch reference: _nodes may have reallocated.
       _nodes[_activeNode].children[activeChar] = leaf;
@@ -126,7 +126,7 @@ void SuffixTree::extendTree(int64_t pos) {
       // There is an existing child edge. Walk down if activeLength ≥ edge len.
       int64_t childIdx = childIt->second;
 
-      // Walk-down (skip/count): if activeLength spans an entire edge, descend.
+      // (skip/count): if activeLength spans an entire edge, descend.
       const int64_t edgeLen = _nodes[childIdx].edgeLength();
       if (_activeLength >= edgeLen) {
         _activeEdge += edgeLen;
@@ -231,7 +231,7 @@ void SuffixTree::buildSuffixTree() {
   const int64_t total = _num + 1;
 
   // Pre-reserve to avoid repeated reallocation (Ukkonen creates at most 2n nodes).
-  // _nodeEnds must also be reserved: reallocation would invalidate pointers stored in internal Node::end.
+  // _nodeEnds must also be reserved.
   _nodes.reserve(static_cast<size_t>(2 * total + 2));
   _nodeEnds.reserve(static_cast<size_t>(total + 2));
 
@@ -306,7 +306,7 @@ SuffixTree::search(const std::string &pattern) const {
   while (patPos < patternLength) {
     const Node &node = _nodes[currentNode];
 
-    // Look for a child edge whose first character matches pattern[patPos].
+    // Look for a child edge whose first character matches pattern.
     const int64_t edgeChar =
         static_cast<unsigned char>(pattern[static_cast<size_t>(patPos)]);
 
@@ -330,7 +330,7 @@ SuffixTree::search(const std::string &pattern) const {
       }
     }
 
-    // If we consumed the whole edge but still have pattern left, descend.
+    // If we consumed the whole edge but still have a pattern left, descend.
     if (patPos < patternLength) {
       currentNode = childIdx;
     } else {
