@@ -19,15 +19,15 @@ struct SearchResult {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SuffixArray
-//
+
 // Builds a suffix array over a read-only text using the SA-IS algorithm
 // (Nong, Zhang & Chan, 2009) in O(n) time and O(n) auxiliary space.
-//
+
 // The text must remain alive for the lifetime of the object when constructed
 // from a GenomeMapper (the object stores a raw pointer to the mapper's
 // buffer). When constructed from a std::string the string is copied
 // internally, so lifetime is managed automatically.
-//
+
 // Search runs in O(m log n) where m = pattern length and n = text length.
 // ─────────────────────────────────────────────────────────────────────────────
 
