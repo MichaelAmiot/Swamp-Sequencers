@@ -16,21 +16,27 @@ bool STSearchResult::operator==(const STSearchResult &other) const {
 // ─────────────────────────────────────────────────────────────────────────────
 
 SuffixTree::SuffixTree(const GenomeMapper &mapper) {
+  // The mapper must be valid before we can safely read its underlying data.
   if (!mapper.isValid())
     throw std::runtime_error("SuffixTree: GenomeMapper is not valid.");
 
+  // The suffix tree references external storage provided by GenomeMapper.
+  // The mapper must outlive this SuffixTree instance.
   _data = mapper.data();
   _num = static_cast<int64_t>(mapper.size());
 
+  // Build the tree immediately so the object is ready for search queries.
   buildSuffixTree();
   _ready = true;
 }
 
 SuffixTree::SuffixTree(const std::string &text) {
+  // Keep an internal copy so the tree can safely reference stable storage.
   _owned = text;
   _data = _owned.c_str();
   _num = static_cast<int64_t>(_owned.size());
 
+  // Build the tree immediately so the object is ready for search queries.
   buildSuffixTree();
   _ready = true;
 }
@@ -39,7 +45,6 @@ SuffixTree::SuffixTree(const std::string &text) {
 // Ukkonen's Algorithm — O(n) time, O(n) space
 
 // Overview
-// ────────
 // The tree is built left to right, one character at a time. Each new character either extends existing
 // leaves for free, creates new ones where the text diverges, or stops early when the character already
 // exists in the tree — carrying unresolved suffixes forward to the next character. An active point
@@ -80,11 +85,11 @@ int64_t SuffixTree::newInternal(int64_t start, int64_t end) {
 // ────────────────────────────────────────────────────
 
 void SuffixTree::extendTree(int64_t pos) {
-  // globalEnd advances to pos+1, extending all open leaves (Rule 1).
+  // globalEnd advances to pos+1, extending all open leaves.
   _globalEnd = pos + 1;
   ++_remaining;
 
-  int64_t lastNewInternal = NO_NODE; // for suffix-link chaining
+  int64_t lastNewInternal = NO_NODE; //for suffix-link chaining
 
   while (_remaining > 0) {
     // Determine the character we need to insert at the active point.
@@ -146,8 +151,8 @@ void SuffixTree::extendTree(int64_t pos) {
       // The old child's edge now starts at nextOnEdge.
       _nodes[childIdx].start = nextOnEdge;
 
-      // Attach old child and new leaf to splitNode.
-      // Note: after newInternal/_nodes may have reallocated — use indices.
+      // Attach an old child and new leaf to splitNode.
+      // After newInternal/_nodes may have reallocated — use indices.
       _nodes[splitNode].children[charAt(nextOnEdge)] = childIdx;
 
       int64_t newLeafIdx = newLeaf(pos);
@@ -166,7 +171,7 @@ void SuffixTree::extendTree(int64_t pos) {
     // One more suffix has been explicitly inserted.
     --_remaining;
 
-    // Follow suffix link (or step toward root).
+    // Follow a suffix link or step toward root.
     if (_activeNode == ROOT && _activeLength > 0) {
       --_activeLength;
       _activeEdge = pos - _remaining + 1;
@@ -179,8 +184,7 @@ void SuffixTree::extendTree(int64_t pos) {
   }
 }
 
-// ── DFS suffix-index annotation (iterative)
-
+// ── DFS suffix-index annotation
 // After the tree is built, each leaf needs to know which suffix it represents.
 // This is calculated by walking the tree and subtracting the root-to-leaf path length from the total text length.
 // Done iteratively with an explicit stack rather than recursion to avoid stack overflow on deep genomic inputs.
@@ -264,7 +268,8 @@ void SuffixTree::buildSuffixTree() {
 // as annotateSuffixIndices: genome-scale trees can be millions of nodes deep).
 void SuffixTree::collectLeaves(int64_t subtreeRoot, std::vector<STSearchResult> &out, int64_t patternLength) const {
   std::vector<int64_t> stack;
-  stack.reserve(1024);
+  stack.reserve(1024); // increases the vector’s capacity to hold 1024 items without needing to grow immediately.
+
   stack.push_back(subtreeRoot);
 
   while (!stack.empty()) {
@@ -274,7 +279,7 @@ void SuffixTree::collectLeaves(int64_t subtreeRoot, std::vector<STSearchResult> 
     const Node &node = _nodes[nodeIdx];
 
     if (node.children.empty()) {
-      // Leaf — record if it is a real suffix (not the pure-sentinel suffix).
+      // Leaf — record if it is a real suffix.
       if (node.suffixIndex >= 0 && node.suffixIndex < _num) {
         out.push_back({node.suffixIndex, patternLength});
       }
@@ -346,8 +351,7 @@ SuffixTree::search(const std::string &pattern) const {
   std::vector<STSearchResult> results;
   collectLeaves(currentNode, results, patternLength);
 
-  std::sort(results.begin(), results.end(),
-            [](const STSearchResult &a, const STSearchResult &b) {
+  std::sort(results.begin(), results.end(), [](const STSearchResult &a, const STSearchResult &b) {
               return a.offset < b.offset;
             });
 
