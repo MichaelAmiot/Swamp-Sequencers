@@ -37,36 +37,14 @@ SuffixTree::SuffixTree(const std::string &text) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Ukkonen's Algorithm — O(n) time, O(n) space
-//
+
 // Overview
 // ────────
-// The tree is built one character at a time (online). Each phase i processes
-// _data[i] and ensures all suffixes _data[0..i], _data[1..i], … _data[i..i]
-// are represented — either explicitly (as a path from root) or implicitly
-// (as a position inside an edge label).
-//
-// Three rules drive each extension within a phase:
-//   Rule 1 — suffix ends at a leaf → extend the leaf's open end for free
-//             (handled automatically because all leaves share _globalEnd).
-//   Rule 2 — suffix ends inside an edge or at an internal node with no
-//             outgoing edge for the new character → create a new leaf
-//             (and possibly split an edge to create an internal node).
-//   Rule 3 — suffix already exists implicitly in the tree → stop the phase
-//             (showstopper rule; remaining count stays for next phase).
-//
-// Active point (activeNode, activeEdge, activeLength)
-//   Tracks where the next extension must begin, avoiding rescanning from root.
-//
-// Suffix links
-//   Every internal node created by a Rule-2 split gets a suffix link set to
-//   the next internal node created in the same phase (or root). This allows
-//   O(1) traversal to the next extension point.
-//
-// Sentinel
-//   A unique sentinel character ($, value = -1 in the integer text) is
-//   appended so that every suffix ends at a distinct leaf — guaranteeing a
-//   proper (non-implicit) suffix tree. The sentinel never matches any real
-//   query character.
+// The tree is built left to right, one character at a time. Each new character either extends existing
+// leaves for free, creates new ones where the text diverges, or stops early when the character already
+// exists in the tree — carrying unresolved suffixes forward to the next character. An active point
+// tracks where to resume, so nothing is rescanned, and suffix links between internal nodes keep each
+// step O(1), giving the whole build O(n).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Node allocation
@@ -102,7 +80,7 @@ int64_t SuffixTree::newInternal(int64_t start, int64_t end) {
 // ────────────────────────────────────────────────────
 
 void SuffixTree::extendTree(int64_t pos) {
-  // Phase pos: globalEnd advances to pos+1, extending all open leaves (Rule 1).
+  // globalEnd advances to pos+1, extending all open leaves (Rule 1).
   _globalEnd = pos + 1;
   ++_remaining;
 
@@ -129,7 +107,7 @@ void SuffixTree::extendTree(int64_t pos) {
     auto childIt = activeChildren.find(activeChar);
 
     if (childIt == activeChildren.end()) {
-      // ── Rule 2a: no edge for this character → create a new leaf. ──────────
+      // ── no edge for this character → create a new leaf. ──────────
       int64_t leaf = newLeaf(pos);
       // Re-fetch reference: _nodes may have reallocated.
       _nodes[_activeNode].children[activeChar] = leaf;
@@ -155,7 +133,7 @@ void SuffixTree::extendTree(int64_t pos) {
       // Check if the next character on the edge already matches pos character.
       const int64_t nextOnEdge = _nodes[childIdx].start + _activeLength;
       if (charAt(nextOnEdge) == charAt(pos)) {
-        // ── Rule 3: character already present → stop this phase. ─────────────
+        // ── character already present...stop this phase. ─────────────
         ++_activeLength;
         if (lastNewInternal != NO_NODE) {
           _nodes[lastNewInternal].suffixLink = _activeNode;
@@ -202,15 +180,10 @@ void SuffixTree::extendTree(int64_t pos) {
 }
 
 // ── DFS suffix-index annotation (iterative)
-// ───────────────────────────────────
-//
-// After construction every leaf's suffixIndex = (total_text_length - height),
-// where height is the sum of edge lengths from root to that leaf.
-// The sentinel adds 1 to total length, so we use _num + 1 as the full length.
-//
-// Implemented iteratively with an explicit stack to avoid call-stack overflow
-// on deep trees (e.g. a 4.6 Mbp genome can produce paths millions of frames
-// deep under worst-case inputs, exhausting the default 1–8 MB thread stack).
+
+// After the tree is built, each leaf needs to know which suffix it represents.
+// This is calculated by walking the tree and subtracting the root-to-leaf path length from the total text length.
+// Done iteratively with an explicit stack rather than recursion to avoid stack overflow on deep genomic inputs.
 
 void SuffixTree::annotateSuffixIndices(int64_t rootIdx, int64_t /*unused*/) {
   // Stack entries: (nodeIndex, accumulatedLabelHeight)
@@ -253,14 +226,13 @@ void SuffixTree::buildSuffixTree() {
   // Total characters processed = text + 1 sentinel.
   const int64_t total = _num + 1;
 
-  // Pre-reserve to avoid repeated reallocation (Ukkonen creates at most 2n
-  // nodes).  _nodeEnds must also be reserved: reallocation would invalidate
-  // pointers stored in internal Node::end.
+  // Pre-reserve to avoid repeated reallocation (Ukkonen creates at most 2n nodes).
+  // _nodeEnds must also be reserved: reallocation would invalidate pointers stored in internal Node::end.
   _nodes.reserve(static_cast<size_t>(2 * total + 2));
   _nodeEnds.reserve(static_cast<size_t>(total + 2));
 
   // Create the root (node 0). Root has no edge label.
-  // We give it a dummy private end so the end pointer is never null.
+  // Give it a dummy private end so the end pointer is never null.
   _nodeEnds.push_back(0);
   Node root;
   root.start = -1;
@@ -290,9 +262,7 @@ void SuffixTree::buildSuffixTree() {
 
 // Iterative DFS — avoids stack overflow on deep subtrees (same root cause
 // as annotateSuffixIndices: genome-scale trees can be millions of nodes deep).
-void SuffixTree::collectLeaves(int64_t subtreeRoot,
-                               std::vector<STSearchResult> &out,
-                               int64_t patternLength) const {
+void SuffixTree::collectLeaves(int64_t subtreeRoot, std::vector<STSearchResult> &out, int64_t patternLength) const {
   std::vector<int64_t> stack;
   stack.reserve(1024);
   stack.push_back(subtreeRoot);
