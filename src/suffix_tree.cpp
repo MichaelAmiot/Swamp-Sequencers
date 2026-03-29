@@ -319,7 +319,7 @@ void SuffixTree::collectLeaves(int64_t subtreeRoot,
 
 std::vector<STSearchResult>
 SuffixTree::search(const std::string &pattern) const {
-  if (!_ready || pattern.empty())
+  if (!_ready || pattern.empty() || _nodes.empty())
     return {};
 
   const int64_t patternLength = static_cast<int64_t>(pattern.size());
