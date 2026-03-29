@@ -50,35 +50,28 @@ public:
 
   // ── Query ─────────────────────────────────────────────────────────────────
 
-  // Return all positions at which pattern occurs in the text, sorted by
-  // ascending offset.  Returns an empty vector if the pattern is absent or
+  // Return all positions at which a pattern occurs in the text, sorted by
+  // ascending offset. Returns an empty vector if the pattern is absent or
   // the array has not been built yet.
   std::vector<SearchResult>
   search(const std::string &pattern) const;
 
   // Number of characters in the indexed text.
-  size_t size() const noexcept {
-    return _num;
-  }
+  size_t size() const noexcept;
 
   // True once the suffix array has been successfully built.
-  bool ready() const noexcept {
-    return _ready;
-  }
+  bool ready() const noexcept;
 
   // Direct read-only access to the underlying suffix array.
-  const std::vector<size_t> &sa() const noexcept {
-    return _sa;
-  }
+  const std::vector<size_t> &sa() const noexcept;
 
 private:
   // ── Internal data ─────────────────────────────────────────────────────────
 
-  const char *_data = nullptr; // Pointer to the text (not owned when
-                               //constructed from GenomeMapper).
-  std::string _owned;          // Storage when constructed from string.
-  size_t _num = 0;             // Text length.
-  std::vector<size_t> _sa;     // The suffix array.
+  const char *_data = nullptr; // Pointer to the text (not owned when constructed from GenomeMapper).
+  std::string _owned;  // Storage when constructed from string.
+  size_t _num = 0; // Text length.
+  std::vector<size_t> _sa; // The suffix array.
   bool _ready = false;
 
   // ── SA-IS implementation ──────────────────────────────────────────────────

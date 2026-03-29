@@ -263,6 +263,18 @@ std::vector<SearchResult> SuffixArray::search(const std::string &pattern) const 
     return results;
 }
 
+size_t SuffixArray::size() const noexcept {
+    return _num;
+}
+
+bool SuffixArray::ready() const noexcept {
+    return _ready;
+}
+
+const std::vector<size_t> & SuffixArray::sa() const noexcept {
+    return _sa;
+}
+
 size_t SuffixArray::lowerBound(const std::string &pattern) const {
     const size_t patternLength = pattern.size();
     size_t low = 0, high = _num;
