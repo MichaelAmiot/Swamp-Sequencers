@@ -180,7 +180,7 @@ void SuffixTree::extendTree(int64_t pos) {
                 break;
             }
 
-            // Rule 2b: split the edge and insert a new internal node plus a new leaf.
+            // split the edge and insert a new internal node plus a new leaf.
             const int64_t splitNode = newInternal(_nodes[childIdx].start, nextPos);
             _nodes[childIdx].start = nextPos;
 
